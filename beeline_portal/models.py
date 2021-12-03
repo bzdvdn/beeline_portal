@@ -453,3 +453,141 @@ class StatRecordV2(BaseModel):
         if self.call_forward:
             struct['callForward'] = self.call_forward
         return struct
+
+
+@dataclass
+class Cfb(BaseModel):
+    forward_all_calls_phone: Optional[str] = None
+    forward_busy_phone: Optional[str] = None
+    forward_unavailable_phone: Optional[str] = None
+    forward_not_answer_phone: Optional[str] = None
+    forward_not_answer_timeout: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, model_dict: dict) -> 'Cfb':
+        return cls(
+            model_dict.get('forwardAllCallsPhone'),
+            model_dict.get('forwardBusyPhone'),
+            model_dict.get('forwardUnavailablePhone'),
+            model_dict.get('forwardNotAnswerPhone'),
+            model_dict.get('forwardNotAnswerTimeout'),
+        )
+
+    def to_beeline_struct(self) -> dict:
+        struct = {}
+        if self.forward_all_calls_phone:
+            struct['forwardAllCallsPhone'] = self.forward_all_calls_phone
+        if self.forward_busy_phone:
+            struct['forwardBusyPhone'] = self.forward_busy_phone
+        if self.forward_unavailable_phone:
+            struct['forwardUnavailablePhone'] = self.forward_unavailable_phone
+        if self.forward_not_answer_phone:
+            struct['forwardNotAnswerPhone'] = self.forward_not_answer_phone
+        if self.forward_not_answer_timeout:
+            struct['forwardNotAnswerTimeout'] = self.forward_not_answer_timeout
+        return struct
+
+
+@dataclass
+class CfbResponse(BaseModel):
+    status: str
+    cfb: Cfb
+
+    @classmethod
+    def from_dict(cls, model_dict: dict) -> 'CfbResponse':
+        return cls(model_dict['status'], Cfb.from_dict(model_dict['cfb']))
+
+    def to_beeline_struct(self) -> dict:
+        return {'status': self.status, 'cfb': self.cfb.to_beeline_struct()}
+
+
+@dataclass
+class BaseRule(BaseModel):
+    name: str
+    forward_to_phone: str
+    schedule: str
+    phone_list: List[str]
+    id_: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, model_dict: dict) -> 'BaseRule':
+        return cls(
+            model_dict['name'],
+            model_dict['forwardToPhone'],
+            model_dict['schedule'],
+            model_dict['phoneList'],
+            model_dict.get('id'),
+        )
+
+    def to_beeline_struct(self) -> dict:
+        struct = {
+            'name': self.name,
+            'forwardToPhone': self.forward_to_phone,
+            'schedule': self.schedule,
+            'phoneList': self.phone_list,
+        }
+        if self.id_:
+            struct['id'] = self.id_
+        return struct
+
+
+@dataclass
+class CfsRule(BaseRule):
+    @classmethod
+    def from_dict(cls, model_dict: dict) -> 'CfsRule':
+        return super(CfsRule, cls).from_dict(model_dict)  # type: ignore
+
+
+@dataclass
+class CfsStatusResponse(BaseModel):
+    is_cfs_service_enabled: bool
+    rule_list: Optional[List[CfsRule]] = None
+
+    @classmethod
+    def from_dict(cls, model_dict: dict) -> 'CfsStatusResponse':
+        return cls(
+            model_dict['isCfsServiceEnabled'],
+            [CfsRule.from_dict(rule) for rule in model_dict['ruleList']]
+            if 'ruleList' in model_dict
+            else None,
+        )
+
+    def to_beeline_struct(self) -> dict:
+        struct: dict = {'isCfsServiceEnabled': self.is_cfs_service_enabled}
+        if self.rule_list:
+            struct['ruleList'] = [r.to_beeline_struct() for r in self.rule_list]
+        return struct
+
+
+@dataclass
+class BwlRule(BaseRule):
+    @classmethod
+    def from_dict(cls, model_dict: dict) -> 'BwlRule':
+        return super(BwlRule, cls).from_dict(model_dict)  # type: ignore
+
+
+@dataclass
+class BwlStatusResponse(BaseModel):
+    status: str
+    black_list: Optional[List[BwlRule]] = None
+    white_list: Optional[List[BwlRule]] = None
+
+    @classmethod
+    def from_dict(cls, model_dict: dict) -> 'BwlStatusResponse':
+        return cls(
+            model_dict['status'],
+            [BwlRule.from_dict(rule) for rule in model_dict['blackList']]
+            if 'blackList' in model_dict
+            else None,
+            [BwlRule.from_dict(rule) for rule in model_dict['whiteList']]
+            if 'whiteList' in model_dict
+            else None,
+        )
+
+    def to_beeline_struct(self) -> dict:
+        struct: dict = {'status': self.status}
+        if self.black_list:
+            struct['blackList'] = [r.to_beeline_struct() for r in self.black_list]
+        if self.white_list:
+            struct['whiteList'] = [r.to_beeline_struct() for r in self.white_list]
+        return struct

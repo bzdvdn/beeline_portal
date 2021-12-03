@@ -5,7 +5,17 @@ from json import JSONDecodeError
 from requests import Session, ConnectionError, ConnectTimeout
 
 from .errors import BeelinePBXException
-from .models import Abonent, StatRecordV2, StatRecord
+from .models import (
+    Abonent,
+    BwlStatusResponse,
+    BwlRule,
+    StatRecordV2,
+    StatRecord,
+    CfbResponse,
+    Cfb,
+    CfsStatusResponse,
+    CfsRule,
+)
 
 
 class BeelinePBX(object):
@@ -124,6 +134,80 @@ class BeelinePBX(object):
 
     def delete_extension_number(self, pattern: str) -> dict:
         _ = self._send_api_request('delete', f'abonents/{pattern}/number',)
+        return {}
+
+    def get_cfb(self, pattern: str) -> CfbResponse:
+        response = self._send_api_request('get', f'abonents/{pattern}/cfb')
+        return CfbResponse.from_dict(response)  # type: ignore
+
+    def enable_cfb(self, pattern: str, cfb: Cfb) -> dict:
+        _ = self._send_api_request(
+            'put', f'abonents/{pattern}/cfb', cfb.to_beeline_struct()
+        )
+        return {}
+
+    def stop_cfb(self, pattern: str) -> dict:
+        _ = self._send_api_request('delete', f'abonents/{pattern}/cfb',)
+        return {}
+
+    def get_cfs_rules(self, pattern: str) -> CfsStatusResponse:
+        response = self._send_api_request('get', f'abonents/{pattern}/cfs')
+        return CfsStatusResponse.from_dict(response)  # type: ignore
+
+    def add_cfs_rule(self, pattern: str, cfs_rule: CfsRule) -> dict:
+        response = self._send_api_request(
+            'post', f'abonents/{pattern}/cfs', cfs_rule.to_beeline_struct()
+        )
+        return {'number': response}
+
+    def enable_cfs(self, pattern: str) -> dict:
+        _ = self._send_api_request('put', f'abonents/{pattern}/cfs')
+        return {}
+
+    def update_cfs_rule(self, pattern: str, cfs_id: str, cfs_rule: CfsRule) -> dict:
+        _ = self._send_api_request(
+            'put', f'abonents/{pattern}/cfs/{cfs_id}', cfs_rule.to_beeline_struct()
+        )
+        return {}
+
+    def stop_cfs(self, pattern: str) -> dict:
+        _ = self._send_api_request('delete', f'abonents/{pattern}/cfs')
+        return {}
+
+    def delete_cfs_rule(self, pattern: str, cfs_id: str) -> dict:
+        _ = self._send_api_request('delete', f'abonents/{pattern}/cfs/{cfs_id}')
+        return {}
+
+    def get_bwl_list(self, pattern: str) -> BwlStatusResponse:
+        response = self._send_api_request('get', f'abonents/{pattern}/bwl')
+        return BwlStatusResponse.from_dict(response)  # type: ignore
+
+    def add_bwl_rule(self, pattern: str, type_: str, bwl_rule: BwlRule) -> dict:
+        response = self._send_api_request(
+            'post',
+            f'abonents/{pattern}/bwl',
+            {'type': type_, 'rule': bwl_rule.to_beeline_struct()},
+        )
+        return {'number': response}
+
+    def update_bwl_rule(self, pattern: str, bwl_id: str, bwl_rule: BwlRule) -> dict:
+        _ = self._send_api_request(
+            'post', f'abonents/{pattern}/bwl/{bwl_id}', bwl_rule.to_beeline_struct(),
+        )
+        return {}
+
+    def enable_bwl(self, pattern: str, rule_type: str) -> dict:
+        _ = self._send_api_request(
+            'put', f'abonents/{pattern}/bwl', {'ruleType': rule_type}
+        )
+        return {}
+
+    def stop_bwl(self, pattern: str) -> dict:
+        _ = self._send_api_request('delete', f'abonents/{pattern}/bwl')
+        return {}
+
+    def delete_bwl_rule(self, pattern: str, bwl_id: str) -> dict:
+        _ = self._send_api_request('delete', f'abonents/{pattern}/bwl/{bwl_id}')
         return {}
 
     def get_statistic(
