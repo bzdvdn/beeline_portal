@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from .utils import (
     format_datetime,
-    parse_datetime_from_miliseconds,
+    parse_datetime_from_milliseconds,
     parse_datetime,
     format_date,
 )
@@ -163,7 +163,7 @@ class VoiceCampaignSchedule(BaseModel):
         return {
             'tryQuantity': self.try_quantity,
             'fromHour': self.from_hour,
-            'toHour': self.toHour,
+            'toHour': self.to_hour,
             'schedule': self.schedule,
         }
 
@@ -225,7 +225,7 @@ class VoiceCampaign(BaseModel):
             'name': self.name,
             'status': self.status,
             'recordId': self.record_id,
-            'type': self.type,
+            'type': self.type_,
             'audioFile': self.audio_file,
             'phones': self.phones,
             'phoneNumber': self.phone_number,
@@ -389,7 +389,7 @@ class StatRecord(BaseModel):
     @classmethod
     def from_dict(cls, model_dict: dict) -> 'StatRecord':
         return cls(
-            parse_datetime_from_miliseconds(model_dict['startDate']),
+            parse_datetime_from_milliseconds(model_dict['startDate']),
             Abonent.from_dict(model_dict['abonent']),
             model_dict['direction'],
             model_dict['status'],
@@ -425,9 +425,9 @@ class StatRecordV2(BaseModel):
     call_forward: Optional[str] = None
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'StatRecord':
+    def from_dict(cls, model_dict: dict) -> 'StatRecordV2':
         return cls(
-            parse_datetime_from_miliseconds(model_dict['startDate']),
+            parse_datetime_from_milliseconds(model_dict['startDate']),
             Abonent.from_dict(model_dict['abonent']),
             model_dict['direction'],
             model_dict['status'],
