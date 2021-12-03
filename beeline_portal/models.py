@@ -591,3 +591,46 @@ class BwlStatusResponse(BaseModel):
         if self.white_list:
             struct['whiteList'] = [r.to_beeline_struct() for r in self.white_list]
         return struct
+
+
+@dataclass
+class CallRecord(BaseModel):
+    id_: str
+    external_id: str
+    call_id: str
+    phone: str
+    direction: str
+    date: datetime
+    duration: int
+    file_size: int
+    comment: str
+    abonent: Abonent
+
+    @classmethod
+    def from_dict(cls, model_dict: dict) -> 'CallRecord':
+        return cls(
+            model_dict['id'],
+            model_dict['externalId'],
+            model_dict['callId'],
+            model_dict['phone'],
+            model_dict['direction'],
+            parse_datetime(model_dict['date']),
+            model_dict['duration'],
+            model_dict['fileSize'],
+            model_dict['comment'],
+            Abonent.from_dict(model_dict['abonent']),
+        )
+
+    def to_beeline_struct(self) -> dict:
+        return {
+            'id': self.id_,
+            'externalId': self.external_id,
+            'callId': self.call_id,
+            'phone': self.phone,
+            'direction': self.direction,
+            'date': format_date(self.date),
+            'duration': self.duration,
+            'fileSize': self.file_size,
+            'comment': self.comment,
+            'abonent': self.abonent.to_beeline_struct(),
+        }

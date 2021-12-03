@@ -1,4 +1,4 @@
-from typing import Optional, Union, List
+from typing import Optional, Union
 from datetime import datetime
 from urllib.parse import urlencode
 from json import JSONDecodeError
@@ -15,6 +15,7 @@ from .models import (
     Cfb,
     CfsStatusResponse,
     CfsRule,
+    CallRecord,
 )
 
 
@@ -60,9 +61,9 @@ class BeelinePBX(object):
         except JSONDecodeError:
             return r.text
 
-    def get_abonents(self) -> List[Abonent]:
+    def get_abonents(self) -> map[Abonent]:
         response = self._send_api_request('get', 'abonents')
-        return [Abonent.from_dict(row) for row in response]
+        return map(Abonent.from_dict, response)
 
     def find_abonent(self, pattern: str) -> Abonent:
         response = self._send_api_request('get', f'abonents/{pattern}')
@@ -209,6 +210,26 @@ class BeelinePBX(object):
     def delete_bwl_rule(self, pattern: str, bwl_id: str) -> dict:
         _ = self._send_api_request('delete', f'abonents/{pattern}/bwl/{bwl_id}')
         return {}
+
+    def get_records(self) -> map[CallRecord]:
+        response = self._send_api_request('get', 'records')
+        return map(CallRecord.from_dict, response)
+
+    def delete_record(self, record_id: str) -> dict:
+        _ = self._send_api_request('delete', f'v2/records/{record_id}')
+        return {}
+
+    def get_record(self, record_id: str) -> CallRecord:
+        response = self._send_api_request('get', f'v2/records/{record_id}')
+        return CallRecord.from_dict(response)  # type: ignore
+
+    def get_record_by_extratracking_id(
+        self, extratracking_id: str, record_id: str
+    ) -> CallRecord:
+        response = self._send_api_request(
+            'get', f'v2/records/{extratracking_id}/{record_id}'
+        )
+        return CallRecord.from_dict(response)  # type: ignore
 
     def get_statistic(
         self,
