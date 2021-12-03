@@ -45,12 +45,13 @@ class BeelinePBX(object):
         endpoint: str,
         params: Optional[dict] = None,
         data: Optional[dict] = None,
-    ) -> Union[dict, list]:
+        file_: bool = False,
+    ) -> Union[dict, list, str, bytes]:
         url = self._generate_request_url(endpoint, params)
         method = getattr(self.session, http_method)
         try:
             r = method(url, json=data)
-            response = r.json()
+            response = r.json() if not file_ else r.content
             if r.status_code > 204:
                 raise BeelinePBXException(response)
             return response
@@ -224,12 +225,36 @@ class BeelinePBX(object):
         return CallRecord.from_dict(response)  # type: ignore
 
     def get_record_by_extratracking_id(
-        self, extratracking_id: str, record_id: str
+        self, extratracking_id: str, user_id: str
     ) -> CallRecord:
         response = self._send_api_request(
-            'get', f'v2/records/{extratracking_id}/{record_id}'
+            'get', f'v2/records/{extratracking_id}/{user_id}'
         )
         return CallRecord.from_dict(response)  # type: ignore
+
+    def download_record(self, record_id: str) -> bytes:
+        response = self._send_api_request(
+            'get', f'v2/records/{record_id}/download', file_=True
+        )
+        return response  # type: ignore
+
+    def download_record_by_extracking_id(
+        self, extracking_id: str, user_id: str
+    ) -> bytes:
+        response = self._send_api_request(
+            'get', f'v2/records/{extracking_id}/{user_id}/download', file_=True
+        )
+        return response  # type: ignore
+
+    def get_record_link(self, record_id: str) -> str:
+        response = self._send_api_request('get', f'v2/records/{record_id}/reference')
+        return response  # type: ignore
+
+    def get_record_link_by_extracking_id(self, extracking_id: str, user_id: str) -> str:
+        response = self._send_api_request(
+            'get', f'v2/records/{extracking_id}/{user_id}/reference'
+        )
+        return response  # type: ignore
 
     def get_statistic(
         self,
