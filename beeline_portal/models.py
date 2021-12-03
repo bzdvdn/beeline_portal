@@ -1,17 +1,21 @@
-from __future__ import annotations
 from datetime import datetime
 from typing import List, Optional
 from abc import ABC
 from dataclasses import dataclass
 
-from .utils import parse_datetime_from_miliseconds, parse_datetime
+from .utils import (
+    format_datetime,
+    parse_datetime_from_miliseconds,
+    parse_datetime,
+    format_date,
+)
 
 
 class BaseModel(ABC):
-    def from_dict(cls, model_dict: dict) -> BaseModel:
+    def from_dict(cls, model_dict: dict) -> 'BaseModel':
         raise NotImplementedError()
 
-    def to_dict(self, native: bool = False) -> dict:
+    def to_beeline_struct(self) -> dict:
         raise NotImplementedError()
 
 
@@ -19,19 +23,28 @@ class BaseModel(ABC):
 class Abonent(BaseModel):
     user_id: str
     phone: str
-    forst_name: str
+    first_name: str
     last_name: str
     extension: str
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> Abonent:
+    def from_dict(cls, model_dict: dict) -> 'Abonent':
         return cls(
             model_dict['userId'],
             model_dict['phone'],
             model_dict['firstName'],
-            model_dict['last_name'],
+            model_dict['lastName'],
             model_dict['extension'],
         )
+
+    def to_beeline_struct(self) -> dict:
+        return {
+            'userId': self.user_id,
+            'phone': self.phone,
+            'firstName': self.first_name,
+            'lastName': self.last_name,
+            'extension': self.extension,
+        }
 
 
 @dataclass
@@ -42,6 +55,9 @@ class Number(BaseModel):
     @classmethod
     def from_dict(cls, model_dict: dict) -> 'Number':
         return cls(model_dict['numberId'], model_dict['phone'],)
+
+    def to_beeline_struct(self) -> dict:
+        return {'numberId': self.number_id, 'phone': self.phone}
 
 
 @dataclass
@@ -64,6 +80,16 @@ class Subscription(BaseModel):
             model_dict['url'],
         )
 
+    def to_beeline_struct(self) -> dict:
+        return {
+            'subscriptionId': self.subscription_id,
+            'targetType': self.target_type,
+            'targetId': self.target_id,
+            'subscriptionType': self.subscription_type,
+            'expires': self.expires,
+            'url': self.url,
+        }
+
 
 @dataclass
 class IcrNumberResult(BaseModel):
@@ -77,6 +103,13 @@ class IcrNumberResult(BaseModel):
             model_dict['phoneNumber'], model_dict['status'], model_dict.get('error'),
         )
 
+    def to_beeline_struct(self) -> dict:
+        return {
+            'phoneNumber': self.phone_number,
+            'status': self.status,
+            'status': self.error,
+        }
+
 
 @dataclass
 class IcrRouteRule(BaseModel):
@@ -87,15 +120,27 @@ class IcrRouteRule(BaseModel):
     def from_dict(cls, model_dict: dict) -> 'IcrRouteRule':
         return cls(model_dict['inboundNumber'], model_dict['extension'])
 
+    def to_beeline_struct(self) -> dict:
+        return {
+            'inboundNumber': self.inbound_number,
+            'extension': self.extension,
+        }
+
 
 @dataclass
 class Answer(BaseModel):
-    choies: str
+    choice: str
     answer: str
 
     @classmethod
     def from_dict(cls, model_dict: dict) -> 'Answer':
         return cls(model_dict['choice'], model_dict['answer'],)
+
+    def to_beeline_struct(self) -> dict:
+        return {
+            'choice': self.choice,
+            'answer': self.answer,
+        }
 
 
 @dataclass
@@ -114,6 +159,14 @@ class VoiceCampaignSchedule(BaseModel):
             model_dict['schedule'],
         )
 
+    def to_beeline_struct(self) -> dict:
+        return {
+            'tryQuantity': self.try_quantity,
+            'fromHour': self.from_hour,
+            'toHour': self.toHour,
+            'schedule': self.schedule,
+        }
+
 
 @dataclass
 class DateAndTime(BaseModel):
@@ -123,6 +176,12 @@ class DateAndTime(BaseModel):
     @classmethod
     def from_dict(cls, model_dict: dict) -> 'DateAndTime':
         return cls(parse_datetime(model_dict['date']), model_dict['time'])
+
+    def to_beeline_struct(self) -> dict:
+        return {
+            'date': format_date(self.date),
+            'time': self.time,
+        }
 
 
 @dataclass
@@ -161,11 +220,236 @@ class VoiceCampaign(BaseModel):
             else None,
         )
 
+    def to_beeline_struct(self) -> dict:
+        struct = {
+            'name': self.name,
+            'status': self.status,
+            'recordId': self.record_id,
+            'type': self.type,
+            'audioFile': self.audio_file,
+            'phones': self.phones,
+            'phoneNumber': self.phone_number,
+            'schedule': self.schedule.to_beeline_struct(),
+            'from': self.from_.to_beeline_struct(),
+            'to': self.to_.to_beeline_struct(),
+        }
+        if self.answers:
+            struct['answers'] = [a.to_beeline_struct() for a in self.answers]
+        if self.abonent:
+            struct['abonent'] = self.abonent.to_beeline_struct()
+        return struct
+
 
 @dataclass
-class CampaignQuation(BaseModel):
+class CampaignQuestion(BaseModel):
     name: str
     answers: List[Answer]
     audio_file: str
     phones: List[str]
     phone_number: str
+    schedule: VoiceCampaignSchedule
+    from_: DateAndTime
+    to_: DateAndTime
+
+    def to_beeline_struct(self) -> dict:
+        return {
+            'name': self.name,
+            'answers': [a.to_beeline_struct() for a in self.answers],
+            'phones': self.phones,
+            'phoneNumber': self.phone_number,
+            'schedule': self.schedule.to_beeline_struct(),
+            'from': self.from_.to_beeline_struct(),
+            'to': self.to_.to_beeline_struct(),
+        }
+
+
+@dataclass
+class VoiceCampaignAnswer(BaseModel):
+    answer: str
+    answer_code: str
+    amount: int
+
+    @classmethod
+    def from_dict(cls, model_dict: dict) -> 'VoiceCampaignAnswer':
+        return cls(model_dict['answer'], model_dict['answerCode'], model_dict['amount'])
+
+    def to_beeline_struct(self) -> dict:
+        return {
+            'answer': self.answer,
+            'answerCode': self.answer_code,
+            'amount': self.amount,
+        }
+
+
+@dataclass
+class VoiceCampaignInfoNumber(BaseModel):
+    phone: str
+    result: str
+    attempts: str
+    last_attempt_date: datetime
+    is_done: bool
+    answer: str
+    answer_code: str
+
+    @classmethod
+    def from_dict(cls, model_dict: dict) -> 'VoiceCampaignInfoNumber':
+        return cls(
+            model_dict['phone'],
+            model_dict['result'],
+            model_dict['attempts'],
+            model_dict['lastAttemptDate'],
+            model_dict['isDone'],
+            model_dict['answer'],
+            model_dict['answerCode'],
+        )
+
+    def to_beeline_struct(self) -> dict:
+        return {
+            'phone': self.phone,
+            'result': self.result,
+            'attempts': self.attempts,
+            'lastAttemptDate': self.last_attempt_date,
+            'isDone': self.is_done,
+            'answer': self.answer,
+            'answerCode': self.answer_code,
+        }
+
+
+@dataclass
+class VoiceCampaignInfoReport(BaseModel):
+    campaign_name: str
+    report_date: datetime
+    client: str
+    state: str
+    start_date: datetime
+    finish_date: datetime
+    total: int
+    processed: int
+    success: int
+    abandoned: int
+    busy_or_no_answer: int
+    number_list: List[VoiceCampaignInfoNumber]
+    abonent: Optional[Abonent] = None
+    answer_list: Optional[List[VoiceCampaignAnswer]] = None
+
+    @classmethod
+    def from_dict(cls, model_dict: dict) -> 'VoiceCampaignInfoReport':
+        return cls(
+            model_dict['campaignName'],
+            parse_datetime(model_dict['reportDate']),
+            model_dict['client'],
+            model_dict['state'],
+            parse_datetime(model_dict['startDate']),
+            parse_datetime(model_dict['finishDate']),
+            model_dict['total'],
+            model_dict['processed'],
+            model_dict['success'],
+            model_dict['abandoned'],
+            model_dict['busyOrNoAnswer'],
+            [VoiceCampaignInfoNumber.from_dict(n) for n in model_dict['numberList']],
+            Abonent.from_dict(model_dict['abonent'])
+            if model_dict.get('abonent')
+            else None,
+            [VoiceCampaignAnswer.from_dict(a) for a in model_dict['answerList']]
+            if model_dict.get('answerList')
+            else None,
+        )
+
+    def to_beeline_struct(self) -> dict:
+        struct = {
+            'campaignName': self.campaign_name,
+            'reportDate': format_date(self.report_date),
+            'client': self.client,
+            'state': self.state,
+            'startDate': format_date(self.start_date),
+            'finishDate': format_date(self.finish_date),
+            'total': self.total,
+            'processed': self.processed,
+            'abandoned': self.abandoned,
+            'busyOrNoAnswer': self.busy_or_no_answer,
+            'numberList': [n.to_beeline_struct() for n in self.number_list],
+        }
+        if self.abonent:
+            struct['abonent'] = self.abonent.to_beeline_struct()
+        if self.answer_list:
+            struct['answerList'] = [a.to_beeline_struct() for a in self.answer_list]
+        return struct
+
+
+@dataclass
+class StatRecord(BaseModel):
+    start_date: datetime
+    abonent: Abonent
+    direction: str
+    status: str
+    phone: str
+    department: Optional[str] = None
+    call_forward: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, model_dict: dict) -> 'StatRecord':
+        return cls(
+            parse_datetime_from_miliseconds(model_dict['startDate']),
+            Abonent.from_dict(model_dict['abonent']),
+            model_dict['direction'],
+            model_dict['status'],
+            model_dict['phone'],
+            model_dict.get('department'),
+            model_dict.get('callForward'),
+        )
+
+    def to_dict(self) -> dict:
+        struct = {
+            'startDate': format_datetime(self.start_date),
+            'abonent': self.abonent.to_beeline_struct(),
+            'direction': self.direction,
+            'status': self.status,
+            'phone': self.phone,
+        }
+        if self.department:
+            struct['department'] = self.department
+        if self.call_forward:
+            struct['callForward'] = self.call_forward
+        return struct
+
+
+@dataclass
+class StatRecordV2(BaseModel):
+    start_date: datetime
+    abonent: Abonent
+    direction: str
+    status: str
+    phone_to: Optional[str] = None
+    phone_from: Optional[str] = None
+    department: Optional[str] = None
+    call_forward: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, model_dict: dict) -> 'StatRecord':
+        return cls(
+            parse_datetime_from_miliseconds(model_dict['startDate']),
+            Abonent.from_dict(model_dict['abonent']),
+            model_dict['direction'],
+            model_dict['status'],
+            model_dict.get('phone_to'),
+            model_dict.get('phone_from'),
+            model_dict.get('department'),
+            model_dict.get('callForward'),
+        )
+
+    def to_dict(self) -> dict:
+        struct = {
+            'startDate': format_datetime(self.start_date),
+            'abonent': self.abonent.to_beeline_struct(),
+            'direction': self.direction,
+            'status': self.status,
+        }
+        if self.phone_from:
+            struct['phone_from'] = self.phone_from
+        if self.phone_to:
+            struct['phone_to'] = self.phone_to
+        if self.department:
+            struct['department'] = self.department
+        if self.call_forward:
+            struct['callForward'] = self.call_forward
+        return struct
