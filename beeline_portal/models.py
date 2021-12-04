@@ -59,6 +59,29 @@ class Number(BaseModel):
     def to_beeline_struct(self) -> dict:
         return {'numberId': self.number_id, 'phone': self.phone}
 
+@dataclass
+class SubscriptionRequest(BaseModel):
+    pattern: str
+    expires: int
+    subscription_type: str
+    url: str
+    
+    @classmethod
+    def from_dict(cls, model_dict: dict) -> 'SubscriptionRequest':
+        return cls(
+            model_dict['pattern'],
+            model_dict['expires'],
+            model_dict['subscriptionType'],
+            model_dict['url'],
+        )
+        
+    def to_beeline_struct(self) -> dict:
+        return {
+            'pattern': self.pattern,
+            'expires': self.expires,
+            'subscriptionType': self.subscription_type,
+            'url': self.url,
+        }
 
 @dataclass
 class Subscription(BaseModel):
@@ -634,3 +657,4 @@ class CallRecord(BaseModel):
             'comment': self.comment,
             'abonent': self.abonent.to_beeline_struct(),
         }
+

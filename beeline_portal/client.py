@@ -9,6 +9,7 @@ from .models import (
     Abonent,
     BwlStatusResponse,
     BwlRule,
+    Number,
     StatRecordV2,
     StatRecord,
     CfbResponse,
@@ -16,6 +17,8 @@ from .models import (
     CfsStatusResponse,
     CfsRule,
     CallRecord,
+    SubscriptionRequest,
+    Subscription,
 )
 
 
@@ -144,7 +147,7 @@ class BeelinePBX(object):
 
     def enable_cfb(self, pattern: str, cfb: Cfb) -> dict:
         _ = self._send_api_request(
-            'put', f'abonents/{pattern}/cfb', cfb.to_beeline_struct()
+            'put', f'abonents/{pattern}/cfb', data=cfb.to_beeline_struct()
         )
         return {}
 
@@ -158,7 +161,7 @@ class BeelinePBX(object):
 
     def add_cfs_rule(self, pattern: str, cfs_rule: CfsRule) -> dict:
         response = self._send_api_request(
-            'post', f'abonents/{pattern}/cfs', cfs_rule.to_beeline_struct()
+            'post', f'abonents/{pattern}/cfs', data=cfs_rule.to_beeline_struct()
         )
         return {'number': response}
 
@@ -168,7 +171,7 @@ class BeelinePBX(object):
 
     def update_cfs_rule(self, pattern: str, cfs_id: str, cfs_rule: CfsRule) -> dict:
         _ = self._send_api_request(
-            'put', f'abonents/{pattern}/cfs/{cfs_id}', cfs_rule.to_beeline_struct()
+            'put', f'abonents/{pattern}/cfs/{cfs_id}', data=cfs_rule.to_beeline_struct()
         )
         return {}
 
@@ -188,13 +191,15 @@ class BeelinePBX(object):
         response = self._send_api_request(
             'post',
             f'abonents/{pattern}/bwl',
-            {'type': type_, 'rule': bwl_rule.to_beeline_struct()},
+            data={'type': type_, 'rule': bwl_rule.to_beeline_struct()},
         )
         return {'number': response}
 
     def update_bwl_rule(self, pattern: str, bwl_id: str, bwl_rule: BwlRule) -> dict:
         _ = self._send_api_request(
-            'post', f'abonents/{pattern}/bwl/{bwl_id}', bwl_rule.to_beeline_struct(),
+            'post',
+            f'abonents/{pattern}/bwl/{bwl_id}',
+            data=bwl_rule.to_beeline_struct(),
         )
         return {}
 
@@ -255,6 +260,32 @@ class BeelinePBX(object):
             'get', f'v2/records/{extracking_id}/{user_id}/reference'
         )
         return response  # type: ignore
+
+    def get_incoming_numbers(self) -> map[Number]:
+        response = self._send_api_request('get', 'numbers')
+        return map(Number.from_dict, response)
+
+    def find_incoming_number(self, pattern: str) -> Number:
+        response = self._send_api_request('get', f'numbers/{pattern}')
+        return Number.from_dict(response)  # type: ignore
+
+    def create_subscription(self, subscription: SubscriptionRequest) -> dict:
+        response = self._send_api_request(
+            'put', 'subscription', data=subscription.to_beeline_struct()
+        )
+        return response  # type: ignore
+
+    def get_subscription(self, subscription_id: str) -> Subscription:
+        response = self._send_api_request(
+            'get', 'subscription', params={'subscriptionId': subscription_id}
+        )
+        return Subscription.from_dict(response)  # type: ignore
+
+    def stop_subscrption(self, subscription_id: str) -> dict:
+        _ = self._send_api_request(
+            'delete', 'subscription', params={'subscriptionId': subscription_id}
+        )
+        return {}
 
     def get_statistic(
         self,
