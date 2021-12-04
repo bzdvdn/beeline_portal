@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional, Union, List
 from datetime import datetime
 from urllib.parse import urlencode
 from json import JSONDecodeError
@@ -19,6 +19,9 @@ from .models import (
     CallRecord,
     SubscriptionRequest,
     Subscription,
+    IcrNumbersResult,
+    IcrRouteRule,
+    IcrRouteResult,
 )
 
 
@@ -47,7 +50,7 @@ class BeelinePBX(object):
         http_method: str,
         endpoint: str,
         params: Optional[dict] = None,
-        data: Optional[dict] = None,
+        data: Union[Optional[dict], Optional[list]] = None,
         file_: bool = False,
     ) -> Union[dict, list, str, bytes]:
         url = self._generate_request_url(endpoint, params)
@@ -286,6 +289,47 @@ class BeelinePBX(object):
             'delete', 'subscription', params={'subscriptionId': subscription_id}
         )
         return {}
+
+    def get_icr_numbers(self) -> map[Number]:
+        response = self._send_api_request('get', 'icr/numbers')
+        return map(Number.from_dict, response)
+
+    def enable_icr_for_number(self, numbers: list) -> map[IcrNumbersResult]:
+        response = self._send_api_request('put', 'icr/numbers', data=numbers)
+        return map(IcrNumbersResult.from_dict, response)
+
+    def stop_icr_for_number(self, numbers: list) -> map[IcrNumbersResult]:
+        response = self._send_api_request('delete', 'icr/numbers', data=numbers)
+        return map(IcrNumbersResult.from_dict, response)
+
+    def get_icr_route_rules(self) -> map[IcrRouteRule]:
+        response = self._send_api_request('get', '/icr/route')
+        return map(IcrRouteRule.from_dict, response)
+
+    def _list_icr_rules_operation(
+        self, operation: str, icr_rules: List[IcrRouteRule]
+    ) -> map[IcrRouteResult]:
+        response = self._send_api_request(
+            operation,
+            '/icr/route',
+            data=[rule.to_beeline_struct() for rule in icr_rules],
+        )
+        return map(IcrRouteResult.from_dict, response)
+
+    def delete_list_of_icr_rules(
+        self, icr_rules: List[IcrRouteRule]
+    ) -> map[IcrRouteResult]:
+        return self._list_icr_rules_operation('delete', icr_rules)
+
+    def add_list_of_icr_rules(
+        self, icr_rules: List[IcrRouteRule]
+    ) -> map[IcrRouteResult]:
+        return self._list_icr_rules_operation('post', icr_rules)
+
+    def update_list_of_icr_rules(
+        self, icr_rules: List[IcrRouteRule]
+    ) -> map[IcrRouteResult]:
+        return self._list_icr_rules_operation('put', icr_rules)
 
     def get_statistic(
         self,

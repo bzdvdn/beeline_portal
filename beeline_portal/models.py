@@ -59,13 +59,14 @@ class Number(BaseModel):
     def to_beeline_struct(self) -> dict:
         return {'numberId': self.number_id, 'phone': self.phone}
 
+
 @dataclass
 class SubscriptionRequest(BaseModel):
     pattern: str
     expires: int
     subscription_type: str
     url: str
-    
+
     @classmethod
     def from_dict(cls, model_dict: dict) -> 'SubscriptionRequest':
         return cls(
@@ -74,7 +75,7 @@ class SubscriptionRequest(BaseModel):
             model_dict['subscriptionType'],
             model_dict['url'],
         )
-        
+
     def to_beeline_struct(self) -> dict:
         return {
             'pattern': self.pattern,
@@ -82,6 +83,7 @@ class SubscriptionRequest(BaseModel):
             'subscriptionType': self.subscription_type,
             'url': self.url,
         }
+
 
 @dataclass
 class Subscription(BaseModel):
@@ -657,4 +659,47 @@ class CallRecord(BaseModel):
             'comment': self.comment,
             'abonent': self.abonent.to_beeline_struct(),
         }
+
+
+@dataclass
+class IcrNumbersResult(BaseModel):
+    phone_number: str
+    status: str
+    error: Optional[dict]
+
+    @classmethod
+    def from_dict(cls, model_dict: dict) -> 'IcrNumbersResult':
+        return cls(
+            model_dict['phoneNumber'], model_dict['status'], model_dict.get('status'),
+        )
+
+    def to_beeline_struct(self) -> dict:
+        struct: dict = {'phoneNumber': self.phone_number, 'status': self.status}
+        if self.error:
+            struct['error'] = self.error
+        return struct
+
+
+@dataclass
+class IcrRouteResult(BaseModel):
+    rule: IcrRouteRule
+    status: str
+    error: Optional[dict] = None
+
+    @classmethod
+    def from_dict(cls, model_dict: dict) -> 'IcrRouteResult':
+        return cls(
+            IcrRouteRule.from_dict(model_dict['rule']),
+            model_dict['status'],
+            model_dict.get('error'),
+        )
+
+    def to_beeline_struct(self) -> dict:
+        struct: dict = {
+            'rule': self.rule.to_beeline_struct(),
+            'status': self.status,
+        }
+        if self.error:
+            struct['error'] = self.error
+        return struct
 
