@@ -266,7 +266,7 @@ class VoiceCampaign(BaseModel):
 
 
 @dataclass
-class CampaignQuestion(BaseModel):
+class VoiceCampaignQuestion(BaseModel):
     name: str
     answers: List[Answer]
     audio_file: str
@@ -703,3 +703,36 @@ class IcrRouteResult(BaseModel):
             struct['error'] = self.error
         return struct
 
+
+@dataclass
+class VoiceCampaignMessage(BaseModel):
+    name: str
+    audio_file: str
+    phones: List[str]
+    phone_number: str
+    schedule: VoiceCampaignSchedule
+    from_: DateAndTime
+    to_: DateAndTime
+
+    @classmethod
+    def from_dict(cls, model_dict: dict) -> 'VoiceCampaignMessage':
+        return cls(
+            model_dict['name'],
+            model_dict['audioFile'],
+            model_dict['phones'],
+            model_dict['phoneNumber'],
+            VoiceCampaignSchedule.from_dict(model_dict['schedule']),
+            DateAndTime.from_dict(model_dict['from']),
+            DateAndTime.from_dict(model_dict['to']),
+        )
+
+    def to_beeline_struct(self) -> dict:
+        return {
+            'name': self.name,
+            'audioFile': self.audio_file,
+            'audioFile': self.phones,
+            'phoneNumber': self.phone_number,
+            'schedule': self.schedule.to_beeline_struct(),
+            'from': self.from_.to_beeline_struct(),
+            'to': self.to_.to_beeline_struct(),
+        }

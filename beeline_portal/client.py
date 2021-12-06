@@ -1,4 +1,5 @@
-from typing import Optional, Union, List
+from base64 import b64encode
+from typing import Optional, Union, List, Any
 from datetime import datetime
 from urllib.parse import urlencode
 from json import JSONDecodeError
@@ -22,6 +23,10 @@ from .models import (
     IcrNumbersResult,
     IcrRouteRule,
     IcrRouteResult,
+    VoiceCampaign,
+    VoiceCampaignMessage,
+    VoiceCampaignQuestion,
+    VoiceCampaignInfoReport,
 )
 
 
@@ -50,13 +55,14 @@ class BeelinePBX(object):
         http_method: str,
         endpoint: str,
         params: Optional[dict] = None,
-        data: Union[Optional[dict], Optional[list]] = None,
+        data: Union[Optional[dict], Optional[list], Optional[str]] = None,
         file_: bool = False,
-    ) -> Union[dict, list, str, bytes]:
+        audio_file: bool = False,
+    ) -> Any:
         url = self._generate_request_url(endpoint, params)
         method = getattr(self.session, http_method)
         try:
-            r = method(url, json=data)
+            r = method(url, json=data) if not audio_file else method(url, data=data)
             response = r.json() if not file_ else r.content
             if r.status_code > 204:
                 raise BeelinePBXException(response)
@@ -74,7 +80,7 @@ class BeelinePBX(object):
 
     def find_abonent(self, pattern: str) -> Abonent:
         response = self._send_api_request('get', f'abonents/{pattern}')
-        return Abonent.from_dict(response)  # type: ignore
+        return Abonent.from_dict(response)
 
     def get_abonent_agent_status(self, pattern: str) -> dict:
         status = self._send_api_request('get', f'abonents/{pattern}/agent')
@@ -146,7 +152,7 @@ class BeelinePBX(object):
 
     def get_cfb(self, pattern: str) -> CfbResponse:
         response = self._send_api_request('get', f'abonents/{pattern}/cfb')
-        return CfbResponse.from_dict(response)  # type: ignore
+        return CfbResponse.from_dict(response)
 
     def enable_cfb(self, pattern: str, cfb: Cfb) -> dict:
         _ = self._send_api_request(
@@ -160,7 +166,7 @@ class BeelinePBX(object):
 
     def get_cfs_rules(self, pattern: str) -> CfsStatusResponse:
         response = self._send_api_request('get', f'abonents/{pattern}/cfs')
-        return CfsStatusResponse.from_dict(response)  # type: ignore
+        return CfsStatusResponse.from_dict(response)
 
     def add_cfs_rule(self, pattern: str, cfs_rule: CfsRule) -> dict:
         response = self._send_api_request(
@@ -188,7 +194,7 @@ class BeelinePBX(object):
 
     def get_bwl_list(self, pattern: str) -> BwlStatusResponse:
         response = self._send_api_request('get', f'abonents/{pattern}/bwl')
-        return BwlStatusResponse.from_dict(response)  # type: ignore
+        return BwlStatusResponse.from_dict(response)
 
     def add_bwl_rule(self, pattern: str, type_: str, bwl_rule: BwlRule) -> dict:
         response = self._send_api_request(
@@ -230,7 +236,7 @@ class BeelinePBX(object):
 
     def get_record(self, record_id: str) -> CallRecord:
         response = self._send_api_request('get', f'v2/records/{record_id}')
-        return CallRecord.from_dict(response)  # type: ignore
+        return CallRecord.from_dict(response)
 
     def get_record_by_extratracking_id(
         self, extratracking_id: str, user_id: str
@@ -238,13 +244,13 @@ class BeelinePBX(object):
         response = self._send_api_request(
             'get', f'v2/records/{extratracking_id}/{user_id}'
         )
-        return CallRecord.from_dict(response)  # type: ignore
+        return CallRecord.from_dict(response)
 
     def download_record(self, record_id: str) -> bytes:
         response = self._send_api_request(
             'get', f'v2/records/{record_id}/download', file_=True
         )
-        return response  # type: ignore
+        return response
 
     def download_record_by_extracking_id(
         self, extracking_id: str, user_id: str
@@ -252,17 +258,17 @@ class BeelinePBX(object):
         response = self._send_api_request(
             'get', f'v2/records/{extracking_id}/{user_id}/download', file_=True
         )
-        return response  # type: ignore
+        return response
 
     def get_record_link(self, record_id: str) -> str:
         response = self._send_api_request('get', f'v2/records/{record_id}/reference')
-        return response  # type: ignore
+        return response
 
     def get_record_link_by_extracking_id(self, extracking_id: str, user_id: str) -> str:
         response = self._send_api_request(
             'get', f'v2/records/{extracking_id}/{user_id}/reference'
         )
-        return response  # type: ignore
+        return response
 
     def get_incoming_numbers(self) -> map[Number]:
         response = self._send_api_request('get', 'numbers')
@@ -270,19 +276,19 @@ class BeelinePBX(object):
 
     def find_incoming_number(self, pattern: str) -> Number:
         response = self._send_api_request('get', f'numbers/{pattern}')
-        return Number.from_dict(response)  # type: ignore
+        return Number.from_dict(response)
 
     def create_subscription(self, subscription: SubscriptionRequest) -> dict:
         response = self._send_api_request(
             'put', 'subscription', data=subscription.to_beeline_struct()
         )
-        return response  # type: ignore
+        return response
 
     def get_subscription(self, subscription_id: str) -> Subscription:
         response = self._send_api_request(
             'get', 'subscription', params={'subscriptionId': subscription_id}
         )
-        return Subscription.from_dict(response)  # type: ignore
+        return Subscription.from_dict(response)
 
     def stop_subscrption(self, subscription_id: str) -> dict:
         _ = self._send_api_request(
@@ -330,6 +336,52 @@ class BeelinePBX(object):
         self, icr_rules: List[IcrRouteRule]
     ) -> map[IcrRouteResult]:
         return self._list_icr_rules_operation('put', icr_rules)
+
+    def get_voice_campaigns(self) -> map[VoiceCampaign]:
+        response = self._send_api_request('get', 'vc')
+        return map(VoiceCampaign.from_dict, response)
+
+    def upload_file_to_voice_campaign(self, path_to_file: str) -> dict:
+        with open(path_to_file, 'rb') as f:
+            b64_str = b64encode(f.read()).decode()
+            response: dict = self._send_api_request(
+                'post', 'vc/upload', data=b64_str, audio_file=True
+            )
+            return {'id': response['id']}
+
+    def add_question_type_voice_campaign(self, campaign: VoiceCampaignQuestion) -> str:
+        response = self._send_api_request(
+            'post', 'vc/question', data=campaign.to_beeline_struct()
+        )
+        return response
+
+    def add_message_type_voice_campaign(self, campaign: VoiceCampaignMessage) -> str:
+        response = self._send_api_request(
+            'post', 'vc/message', data=campaign.to_beeline_struct()
+        )
+        return response
+
+    def update_voice_campaign(self, campaign_id: str, campaign: VoiceCampaign) -> dict:
+        _ = self._send_api_request(
+            'put', f'vc/{campaign_id}', data=campaign.to_beeline_struct()
+        )
+        return {}
+
+    def delete_voice_campaign(self, campaign_id: str) -> dict:
+        _ = self._send_api_request('delete', f'vc/{campaign_id}',)
+        return {}
+
+    def stop_voice_campaign(self, campaign_id: str) -> dict:
+        _ = self._send_api_request('put', f'vc/stop/{campaign_id}',)
+        return {}
+
+    def start_voice_campaign(self, campaign_id: str) -> dict:
+        _ = self._send_api_request('put', f'vc/start/{campaign_id}',)
+        return {}
+
+    def get_voice_campaign_info(self, campaign_id: str) -> VoiceCampaignInfoReport:
+        response = self._send_api_request('get', f'vc/info/{campaign_id}',)
+        return VoiceCampaignInfoReport.from_dict(response)
 
     def get_statistic(
         self,
