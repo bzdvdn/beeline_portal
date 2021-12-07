@@ -26,6 +26,8 @@ class Abonent(BaseModel):
     first_name: str
     last_name: str
     extension: str
+    email: Optional[str] = None
+    department: Optional[str] = None
 
     @classmethod
     def from_dict(cls, model_dict: dict) -> 'Abonent':
@@ -35,16 +37,23 @@ class Abonent(BaseModel):
             model_dict['firstName'],
             model_dict['lastName'],
             model_dict['extension'],
+            model_dict.get('email'),
+            model_dict.get('department'),
         )
 
     def to_beeline_struct(self) -> dict:
-        return {
+        struct = {
             'userId': self.user_id,
             'phone': self.phone,
             'firstName': self.first_name,
             'lastName': self.last_name,
             'extension': self.extension,
         }
+        if self.email:
+            struct['email'] = self.email
+        if self.department:
+            struct['department'] = self.department
+        return struct
 
 
 @dataclass
