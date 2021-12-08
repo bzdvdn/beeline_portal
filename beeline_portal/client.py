@@ -76,11 +76,11 @@ class BeelinePBX(object):
 
     def get_abonents(self) -> map[Abonent]:
         response = self._send_api_request('get', 'abonents')
-        return map(Abonent.from_dict, response)
+        return map(Abonent.from_beeline_struct, response)
 
     def find_abonent(self, pattern: str) -> Abonent:
         response = self._send_api_request('get', f'abonents/{pattern}')
-        return Abonent.from_dict(response)
+        return Abonent.from_beeline_struct(response)
 
     def get_abonent_agent_status(self, pattern: str) -> dict:
         status = self._send_api_request('get', f'abonents/{pattern}/agent')
@@ -152,7 +152,7 @@ class BeelinePBX(object):
 
     def get_cfb(self, pattern: str) -> CfbResponse:
         response = self._send_api_request('get', f'abonents/{pattern}/cfb')
-        return CfbResponse.from_dict(response)
+        return CfbResponse.from_beeline_struct(response)
 
     def enable_cfb(self, pattern: str, cfb: Cfb) -> dict:
         _ = self._send_api_request(
@@ -166,7 +166,7 @@ class BeelinePBX(object):
 
     def get_cfs_rules(self, pattern: str) -> CfsStatusResponse:
         response = self._send_api_request('get', f'abonents/{pattern}/cfs')
-        return CfsStatusResponse.from_dict(response)
+        return CfsStatusResponse.from_beeline_struct(response)
 
     def add_cfs_rule(self, pattern: str, cfs_rule: CfsRule) -> dict:
         response = self._send_api_request(
@@ -194,7 +194,7 @@ class BeelinePBX(object):
 
     def get_bwl_list(self, pattern: str) -> BwlStatusResponse:
         response = self._send_api_request('get', f'abonents/{pattern}/bwl')
-        return BwlStatusResponse.from_dict(response)
+        return BwlStatusResponse.from_beeline_struct(response)
 
     def add_bwl_rule(self, pattern: str, type_: str, bwl_rule: BwlRule) -> dict:
         response = self._send_api_request(
@@ -228,7 +228,7 @@ class BeelinePBX(object):
 
     def get_records(self) -> map[CallRecord]:
         response = self._send_api_request('get', 'records')
-        return map(CallRecord.from_dict, response)
+        return map(CallRecord.from_beeline_struct, response)
 
     def delete_record(self, record_id: str) -> dict:
         _ = self._send_api_request('delete', f'v2/records/{record_id}')
@@ -236,7 +236,7 @@ class BeelinePBX(object):
 
     def get_record(self, record_id: str) -> CallRecord:
         response = self._send_api_request('get', f'v2/records/{record_id}')
-        return CallRecord.from_dict(response)
+        return CallRecord.from_beeline_struct(response)
 
     def get_record_by_extratracking_id(
         self, extratracking_id: str, user_id: str
@@ -244,7 +244,7 @@ class BeelinePBX(object):
         response = self._send_api_request(
             'get', f'v2/records/{extratracking_id}/{user_id}'
         )
-        return CallRecord.from_dict(response)
+        return CallRecord.from_beeline_struct(response)
 
     def download_record(self, record_id: str) -> bytes:
         response = self._send_api_request(
@@ -272,11 +272,11 @@ class BeelinePBX(object):
 
     def get_incoming_numbers(self) -> map[Number]:
         response = self._send_api_request('get', 'numbers')
-        return map(Number.from_dict, response)
+        return map(Number.from_beeline_struct, response)
 
     def find_incoming_number(self, pattern: str) -> Number:
         response = self._send_api_request('get', f'numbers/{pattern}')
-        return Number.from_dict(response)
+        return Number.from_beeline_struct(response)
 
     def create_subscription(self, subscription: SubscriptionRequest) -> dict:
         response = self._send_api_request(
@@ -288,7 +288,7 @@ class BeelinePBX(object):
         response = self._send_api_request(
             'get', 'subscription', params={'subscriptionId': subscription_id}
         )
-        return Subscription.from_dict(response)
+        return Subscription.from_beeline_struct(response)
 
     def stop_subscrption(self, subscription_id: str) -> dict:
         _ = self._send_api_request(
@@ -298,19 +298,19 @@ class BeelinePBX(object):
 
     def get_icr_numbers(self) -> map[Number]:
         response = self._send_api_request('get', 'icr/numbers')
-        return map(Number.from_dict, response)
+        return map(Number.from_beeline_struct, response)
 
     def enable_icr_for_number(self, numbers: list) -> map[IcrNumbersResult]:
         response = self._send_api_request('put', 'icr/numbers', data=numbers)
-        return map(IcrNumbersResult.from_dict, response)
+        return map(IcrNumbersResult.from_beeline_struct, response)
 
     def stop_icr_for_number(self, numbers: list) -> map[IcrNumbersResult]:
         response = self._send_api_request('delete', 'icr/numbers', data=numbers)
-        return map(IcrNumbersResult.from_dict, response)
+        return map(IcrNumbersResult.from_beeline_struct, response)
 
     def get_icr_route_rules(self) -> map[IcrRouteRule]:
         response = self._send_api_request('get', '/icr/route')
-        return map(IcrRouteRule.from_dict, response)
+        return map(IcrRouteRule.from_beeline_struct, response)
 
     def _list_icr_rules_operation(
         self, operation: str, icr_rules: List[IcrRouteRule]
@@ -320,7 +320,7 @@ class BeelinePBX(object):
             '/icr/route',
             data=[rule.to_beeline_struct() for rule in icr_rules],
         )
-        return map(IcrRouteResult.from_dict, response)
+        return map(IcrRouteResult.from_beeline_struct, response)
 
     def delete_list_of_icr_rules(
         self, icr_rules: List[IcrRouteRule]
@@ -339,7 +339,7 @@ class BeelinePBX(object):
 
     def get_voice_campaigns(self) -> map[VoiceCampaign]:
         response = self._send_api_request('get', 'vc')
-        return map(VoiceCampaign.from_dict, response)
+        return map(VoiceCampaign.from_beeline_struct, response)
 
     def upload_file_to_voice_campaign(self, path_to_file: str) -> dict:
         with open(path_to_file, 'rb') as f:
@@ -381,7 +381,7 @@ class BeelinePBX(object):
 
     def get_voice_campaign_info(self, campaign_id: str) -> VoiceCampaignInfoReport:
         response = self._send_api_request('get', f'vc/info/{campaign_id}',)
-        return VoiceCampaignInfoReport.from_dict(response)
+        return VoiceCampaignInfoReport.from_beeline_struct(response)
 
     def get_statistic(
         self,
@@ -399,7 +399,7 @@ class BeelinePBX(object):
             'pageSize': page_size,
         }
         response = self._send_api_request('get', 'statistics', params)
-        return map(StatRecord.from_dict, response)
+        return map(StatRecord.from_beeline_struct, response)
 
     def get_v2_statistic(
         self,
@@ -417,4 +417,4 @@ class BeelinePBX(object):
             'pageSize': page_size,
         }
         response = self._send_api_request('get', 'v2/statistics', params)
-        return map(StatRecordV2.from_dict, response)
+        return map(StatRecordV2.from_beeline_struct, response)
