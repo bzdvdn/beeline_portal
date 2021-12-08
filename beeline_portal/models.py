@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 from abc import ABC
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 
 from .utils import (
     format_datetime,
@@ -12,7 +12,7 @@ from .utils import (
 
 
 class BaseModel(ABC):
-    def from_dict(cls, model_dict: dict) -> 'BaseModel':
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'BaseModel':
         raise NotImplementedError()
 
     def to_beeline_struct(self) -> dict:
@@ -30,15 +30,15 @@ class Abonent(BaseModel):
     department: Optional[str] = None
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'Abonent':
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'Abonent':
         return cls(
-            model_dict['userId'],
-            model_dict['phone'],
-            model_dict['firstName'],
-            model_dict['lastName'],
-            model_dict.get('extension'),
-            model_dict.get('email'),
-            model_dict.get('department'),
+            beeline_struct['userId'],
+            beeline_struct['phone'],
+            beeline_struct['firstName'],
+            beeline_struct['lastName'],
+            beeline_struct.get('extension'),
+            beeline_struct.get('email'),
+            beeline_struct.get('department'),
         )
 
     def to_beeline_struct(self) -> dict:
@@ -63,8 +63,8 @@ class Number(BaseModel):
     phone: str
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'Number':
-        return cls(model_dict['numberId'], model_dict['phone'],)
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'Number':
+        return cls(beeline_struct['numberId'], beeline_struct['phone'],)
 
     def to_beeline_struct(self) -> dict:
         return {'numberId': self.number_id, 'phone': self.phone}
@@ -78,12 +78,12 @@ class SubscriptionRequest(BaseModel):
     url: str
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'SubscriptionRequest':
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'SubscriptionRequest':
         return cls(
-            model_dict['pattern'],
-            model_dict['expires'],
-            model_dict['subscriptionType'],
-            model_dict['url'],
+            beeline_struct['pattern'],
+            beeline_struct['expires'],
+            beeline_struct['subscriptionType'],
+            beeline_struct['url'],
         )
 
     def to_beeline_struct(self) -> dict:
@@ -105,14 +105,14 @@ class Subscription(BaseModel):
     url: str
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'Subscription':
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'Subscription':
         return cls(
-            model_dict['subscriptionId'],
-            model_dict['targetType'],
-            model_dict['targetId'],
-            model_dict['subscriptionType'],
-            model_dict['expires'],
-            model_dict['url'],
+            beeline_struct['subscriptionId'],
+            beeline_struct['targetType'],
+            beeline_struct['targetId'],
+            beeline_struct['subscriptionType'],
+            beeline_struct['expires'],
+            beeline_struct['url'],
         )
 
     def to_beeline_struct(self) -> dict:
@@ -133,9 +133,11 @@ class IcrNumberResult(BaseModel):
     error: Optional[dict] = None
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'IcrNumberResult':
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'IcrNumberResult':
         return cls(
-            model_dict['phoneNumber'], model_dict['status'], model_dict.get('error'),
+            beeline_struct['phoneNumber'],
+            beeline_struct['status'],
+            beeline_struct.get('error'),
         )
 
     def to_beeline_struct(self) -> dict:
@@ -152,8 +154,8 @@ class IcrRouteRule(BaseModel):
     extension: str
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'IcrRouteRule':
-        return cls(model_dict['inboundNumber'], model_dict['extension'])
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'IcrRouteRule':
+        return cls(beeline_struct['inboundNumber'], beeline_struct['extension'])
 
     def to_beeline_struct(self) -> dict:
         return {
@@ -168,8 +170,8 @@ class Answer(BaseModel):
     answer: str
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'Answer':
-        return cls(model_dict['choice'], model_dict['answer'],)
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'Answer':
+        return cls(beeline_struct['choice'], beeline_struct['answer'],)
 
     def to_beeline_struct(self) -> dict:
         return {
@@ -186,12 +188,12 @@ class VoiceCampaignSchedule(BaseModel):
     schedule: str
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'VoiceCampaignSchedule':
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'VoiceCampaignSchedule':
         return cls(
-            model_dict['tryQuantity'],
-            model_dict['fromHour'],
-            model_dict['toHour'],
-            model_dict['schedule'],
+            beeline_struct['tryQuantity'],
+            beeline_struct['fromHour'],
+            beeline_struct['toHour'],
+            beeline_struct['schedule'],
         )
 
     def to_beeline_struct(self) -> dict:
@@ -208,13 +210,9 @@ class DateAndTime(BaseModel):
     date: datetime
     time: str
 
-    def __post_init__(self):
-        if not isinstance(self.date, datetime):
-            self.date = parse_datetime(self.date)
-
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'DateAndTime':
-        return cls(parse_datetime(model_dict['date']), model_dict['time'])
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'DateAndTime':
+        return cls(parse_datetime(beeline_struct['date']), beeline_struct['time'])
 
     def to_beeline_struct(self) -> dict:
         return {
@@ -239,23 +237,23 @@ class VoiceCampaign(BaseModel):
     abonent: Optional[Abonent] = None
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'VoiceCampaign':
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'VoiceCampaign':
         return cls(
-            model_dict['name'],
-            model_dict['status'],
-            model_dict['recordId'],
-            model_dict['type'],
-            model_dict['audioFile'],
-            model_dict['phones'],
-            model_dict['phoneNumber'],
-            VoiceCampaignSchedule.from_dict(model_dict['schedule']),
-            DateAndTime.from_dict(model_dict['from']),
-            DateAndTime.from_dict(model_dict['to']),
-            answers=[Answer.from_dict(r) for r in model_dict['answers']]
-            if 'answers' in model_dict
+            beeline_struct['name'],
+            beeline_struct['status'],
+            beeline_struct['recordId'],
+            beeline_struct['type'],
+            beeline_struct['audioFile'],
+            beeline_struct['phones'],
+            beeline_struct['phoneNumber'],
+            VoiceCampaignSchedule.from_beeline_struct(beeline_struct['schedule']),
+            DateAndTime.from_beeline_struct(beeline_struct['from']),
+            DateAndTime.from_beeline_struct(beeline_struct['to']),
+            answers=[Answer.from_beeline_struct(r) for r in beeline_struct['answers']]
+            if 'answers' in beeline_struct
             else None,
-            abonent=Abonent.from_dict(model_dict['abonent'])
-            if 'abonent' in model_dict
+            abonent=Abonent.from_beeline_struct(beeline_struct['abonent'])
+            if 'abonent' in beeline_struct
             else None,
         )
 
@@ -309,8 +307,12 @@ class VoiceCampaignAnswer(BaseModel):
     amount: int
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'VoiceCampaignAnswer':
-        return cls(model_dict['answer'], model_dict['answerCode'], model_dict['amount'])
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'VoiceCampaignAnswer':
+        return cls(
+            beeline_struct['answer'],
+            beeline_struct['answerCode'],
+            beeline_struct['amount'],
+        )
 
     def to_beeline_struct(self) -> dict:
         return {
@@ -331,15 +333,15 @@ class VoiceCampaignInfoNumber(BaseModel):
     answer_code: str
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'VoiceCampaignInfoNumber':
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'VoiceCampaignInfoNumber':
         return cls(
-            model_dict['phone'],
-            model_dict['result'],
-            model_dict['attempts'],
-            model_dict['lastAttemptDate'],
-            model_dict['isDone'],
-            model_dict['answer'],
-            model_dict['answerCode'],
+            beeline_struct['phone'],
+            beeline_struct['result'],
+            beeline_struct['attempts'],
+            beeline_struct['lastAttemptDate'],
+            beeline_struct['isDone'],
+            beeline_struct['answer'],
+            beeline_struct['answerCode'],
         )
 
     def to_beeline_struct(self) -> dict:
@@ -372,25 +374,31 @@ class VoiceCampaignInfoReport(BaseModel):
     answer_list: Optional[List[VoiceCampaignAnswer]] = None
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'VoiceCampaignInfoReport':
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'VoiceCampaignInfoReport':
         return cls(
-            model_dict['campaignName'],
-            parse_datetime(model_dict['reportDate']),
-            model_dict['client'],
-            model_dict['state'],
-            parse_datetime(model_dict['startDate']),
-            parse_datetime(model_dict['finishDate']),
-            model_dict['total'],
-            model_dict['processed'],
-            model_dict['success'],
-            model_dict['abandoned'],
-            model_dict['busyOrNoAnswer'],
-            [VoiceCampaignInfoNumber.from_dict(n) for n in model_dict['numberList']],
-            Abonent.from_dict(model_dict['abonent'])
-            if model_dict.get('abonent')
+            beeline_struct['campaignName'],
+            parse_datetime(beeline_struct['reportDate']),
+            beeline_struct['client'],
+            beeline_struct['state'],
+            parse_datetime(beeline_struct['startDate']),
+            parse_datetime(beeline_struct['finishDate']),
+            beeline_struct['total'],
+            beeline_struct['processed'],
+            beeline_struct['success'],
+            beeline_struct['abandoned'],
+            beeline_struct['busyOrNoAnswer'],
+            [
+                VoiceCampaignInfoNumber.from_beeline_struct(n)
+                for n in beeline_struct['numberList']
+            ],
+            Abonent.from_beeline_struct(beeline_struct['abonent'])
+            if beeline_struct.get('abonent')
             else None,
-            [VoiceCampaignAnswer.from_dict(a) for a in model_dict['answerList']]
-            if model_dict.get('answerList')
+            [
+                VoiceCampaignAnswer.from_beeline_struct(a)
+                for a in beeline_struct['answerList']
+            ]
+            if beeline_struct.get('answerList')
             else None,
         )
 
@@ -426,15 +434,15 @@ class StatRecord(BaseModel):
     call_forward: Optional[str] = None
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'StatRecord':
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'StatRecord':
         return cls(
-            parse_datetime_from_milliseconds(model_dict['startDate']),
-            Abonent.from_dict(model_dict['abonent']),
-            model_dict['direction'],
-            model_dict['status'],
-            model_dict['phone'],
-            model_dict.get('department'),
-            model_dict.get('callForward'),
+            parse_datetime_from_milliseconds(beeline_struct['startDate']),
+            Abonent.from_beeline_struct(beeline_struct['abonent']),
+            beeline_struct['direction'],
+            beeline_struct['status'],
+            beeline_struct['phone'],
+            beeline_struct.get('department'),
+            beeline_struct.get('callForward'),
         )
 
     def to_dict(self) -> dict:
@@ -464,16 +472,16 @@ class StatRecordV2(BaseModel):
     call_forward: Optional[str] = None
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'StatRecordV2':
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'StatRecordV2':
         return cls(
-            parse_datetime_from_milliseconds(model_dict['startDate']),
-            Abonent.from_dict(model_dict['abonent']),
-            model_dict['direction'],
-            model_dict['status'],
-            model_dict.get('phone_to'),
-            model_dict.get('phone_from'),
-            model_dict.get('department'),
-            model_dict.get('callForward'),
+            parse_datetime_from_milliseconds(beeline_struct['startDate']),
+            Abonent.from_beeline_struct(beeline_struct['abonent']),
+            beeline_struct['direction'],
+            beeline_struct['status'],
+            beeline_struct.get('phone_to'),
+            beeline_struct.get('phone_from'),
+            beeline_struct.get('department'),
+            beeline_struct.get('callForward'),
         )
 
     def to_dict(self) -> dict:
@@ -503,13 +511,13 @@ class Cfb(BaseModel):
     forward_not_answer_timeout: Optional[str] = None
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'Cfb':
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'Cfb':
         return cls(
-            model_dict.get('forwardAllCallsPhone'),
-            model_dict.get('forwardBusyPhone'),
-            model_dict.get('forwardUnavailablePhone'),
-            model_dict.get('forwardNotAnswerPhone'),
-            model_dict.get('forwardNotAnswerTimeout'),
+            beeline_struct.get('forwardAllCallsPhone'),
+            beeline_struct.get('forwardBusyPhone'),
+            beeline_struct.get('forwardUnavailablePhone'),
+            beeline_struct.get('forwardNotAnswerPhone'),
+            beeline_struct.get('forwardNotAnswerTimeout'),
         )
 
     def to_beeline_struct(self) -> dict:
@@ -533,8 +541,10 @@ class CfbResponse(BaseModel):
     cfb: Cfb
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'CfbResponse':
-        return cls(model_dict['status'], Cfb.from_dict(model_dict['cfb']))
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'CfbResponse':
+        return cls(
+            beeline_struct['status'], Cfb.from_beeline_struct(beeline_struct['cfb'])
+        )
 
     def to_beeline_struct(self) -> dict:
         return {'status': self.status, 'cfb': self.cfb.to_beeline_struct()}
@@ -549,13 +559,13 @@ class BaseRule(BaseModel):
     id_: Optional[str] = None
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'BaseRule':
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'BaseRule':
         return cls(
-            model_dict['name'],
-            model_dict['forwardToPhone'],
-            model_dict['schedule'],
-            model_dict['phoneList'],
-            model_dict.get('id'),
+            beeline_struct['name'],
+            beeline_struct['forwardToPhone'],
+            beeline_struct['schedule'],
+            beeline_struct['phoneList'],
+            beeline_struct.get('id'),
         )
 
     def to_beeline_struct(self) -> dict:
@@ -573,8 +583,8 @@ class BaseRule(BaseModel):
 @dataclass
 class CfsRule(BaseRule):
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'CfsRule':
-        return super(CfsRule, cls).from_dict(model_dict)  # type: ignore
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'CfsRule':
+        return super(CfsRule, cls).from_beeline_struct(beeline_struct)  # type: ignore
 
 
 @dataclass
@@ -583,11 +593,11 @@ class CfsStatusResponse(BaseModel):
     rule_list: Optional[List[CfsRule]] = None
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'CfsStatusResponse':
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'CfsStatusResponse':
         return cls(
-            model_dict['isCfsServiceEnabled'],
-            [CfsRule.from_dict(rule) for rule in model_dict['ruleList']]
-            if 'ruleList' in model_dict
+            beeline_struct['isCfsServiceEnabled'],
+            [CfsRule.from_beeline_struct(rule) for rule in beeline_struct['ruleList']]
+            if 'ruleList' in beeline_struct
             else None,
         )
 
@@ -601,8 +611,8 @@ class CfsStatusResponse(BaseModel):
 @dataclass
 class BwlRule(BaseRule):
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'BwlRule':
-        return super(BwlRule, cls).from_dict(model_dict)  # type: ignore
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'BwlRule':
+        return super(BwlRule, cls).from_beeline_struct(beeline_struct)  # type: ignore
 
 
 @dataclass
@@ -612,14 +622,14 @@ class BwlStatusResponse(BaseModel):
     white_list: Optional[List[BwlRule]] = None
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'BwlStatusResponse':
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'BwlStatusResponse':
         return cls(
-            model_dict['status'],
-            [BwlRule.from_dict(rule) for rule in model_dict['blackList']]
-            if 'blackList' in model_dict
+            beeline_struct['status'],
+            [BwlRule.from_beeline_struct(rule) for rule in beeline_struct['blackList']]
+            if 'blackList' in beeline_struct
             else None,
-            [BwlRule.from_dict(rule) for rule in model_dict['whiteList']]
-            if 'whiteList' in model_dict
+            [BwlRule.from_beeline_struct(rule) for rule in beeline_struct['whiteList']]
+            if 'whiteList' in beeline_struct
             else None,
         )
 
@@ -646,18 +656,18 @@ class CallRecord(BaseModel):
     abonent: Abonent
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'CallRecord':
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'CallRecord':
         return cls(
-            model_dict['id'],
-            model_dict['externalId'],
-            model_dict['callId'],
-            model_dict['phone'],
-            model_dict['direction'],
-            parse_datetime(model_dict['date']),
-            model_dict['duration'],
-            model_dict['fileSize'],
-            model_dict['comment'],
-            Abonent.from_dict(model_dict['abonent']),
+            beeline_struct['id'],
+            beeline_struct['externalId'],
+            beeline_struct['callId'],
+            beeline_struct['phone'],
+            beeline_struct['direction'],
+            parse_datetime(beeline_struct['date']),
+            beeline_struct['duration'],
+            beeline_struct['fileSize'],
+            beeline_struct['comment'],
+            Abonent.from_beeline_struct(beeline_struct['abonent']),
         )
 
     def to_beeline_struct(self) -> dict:
@@ -682,9 +692,11 @@ class IcrNumbersResult(BaseModel):
     error: Optional[dict]
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'IcrNumbersResult':
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'IcrNumbersResult':
         return cls(
-            model_dict['phoneNumber'], model_dict['status'], model_dict.get('status'),
+            beeline_struct['phoneNumber'],
+            beeline_struct['status'],
+            beeline_struct.get('status'),
         )
 
     def to_beeline_struct(self) -> dict:
@@ -701,11 +713,11 @@ class IcrRouteResult(BaseModel):
     error: Optional[dict] = None
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'IcrRouteResult':
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'IcrRouteResult':
         return cls(
-            IcrRouteRule.from_dict(model_dict['rule']),
-            model_dict['status'],
-            model_dict.get('error'),
+            IcrRouteRule.from_beeline_struct(beeline_struct['rule']),
+            beeline_struct['status'],
+            beeline_struct.get('error'),
         )
 
     def to_beeline_struct(self) -> dict:
@@ -729,15 +741,15 @@ class VoiceCampaignMessage(BaseModel):
     to_: DateAndTime
 
     @classmethod
-    def from_dict(cls, model_dict: dict) -> 'VoiceCampaignMessage':
+    def from_beeline_struct(cls, beeline_struct: dict) -> 'VoiceCampaignMessage':
         return cls(
-            model_dict['name'],
-            model_dict['audioFile'],
-            model_dict['phones'],
-            model_dict['phoneNumber'],
-            VoiceCampaignSchedule.from_dict(model_dict['schedule']),
-            DateAndTime.from_dict(model_dict['from']),
-            DateAndTime.from_dict(model_dict['to']),
+            beeline_struct['name'],
+            beeline_struct['audioFile'],
+            beeline_struct['phones'],
+            beeline_struct['phoneNumber'],
+            VoiceCampaignSchedule.from_beeline_struct(beeline_struct['schedule']),
+            DateAndTime.from_beeline_struct(beeline_struct['from']),
+            DateAndTime.from_beeline_struct(beeline_struct['to']),
         )
 
     def to_beeline_struct(self) -> dict:

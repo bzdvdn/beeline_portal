@@ -16,10 +16,11 @@ from beeline_portal.models import (
     VoiceCampaign,
     VoiceCampaignSchedule,
 )
+from beeline_portal.utils import parse_datetime
 
 
 class AbonentTest(unittest.TestCase):
-    def test_from_dict(self):
+    def test_from_beeline_struct(self):
         data = json.loads(
             '''
             {"userId": "9379992@beeline.ru",
@@ -31,7 +32,7 @@ class AbonentTest(unittest.TestCase):
             "extension": "2310"}
             '''
         )
-        abonent = Abonent.from_dict(data)
+        abonent = Abonent.from_beeline_struct(data)
         assert abonent.user_id == '9379992@beeline.ru'
         assert abonent.phone == '9379992'
         assert abonent.first_name == 'TestUser'
@@ -61,14 +62,14 @@ class AbonentTest(unittest.TestCase):
 
 
 class NumberTest(unittest.TestCase):
-    def test_from_dict(self):
+    def test_from_beeline_struct(self):
         data = json.loads(
             '''
             {"numberId": "9379992@beeline.ru",
             "phone":"9379992"}
             '''
         )
-        number = Number.from_dict(data)
+        number = Number.from_beeline_struct(data)
         assert number.number_id == '9379992@beeline.ru'
         assert number.phone == '9379992'
 
@@ -80,7 +81,7 @@ class NumberTest(unittest.TestCase):
 
 
 class SubscriptionRequestTest(unittest.TestCase):
-    def test_from_dict(self):
+    def test_from_beeline_struct(self):
         data = json.loads(
             '''
             {"pattern": "9379992",
@@ -89,7 +90,7 @@ class SubscriptionRequestTest(unittest.TestCase):
             "url":"test.io"}
             '''
         )
-        subs_request = SubscriptionRequest.from_dict(data)
+        subs_request = SubscriptionRequest.from_beeline_struct(data)
         assert subs_request.pattern == '9379992'
         assert subs_request.expires == 1234535
         assert subs_request.subscription_type == 'BASIC_CALL'
@@ -105,7 +106,7 @@ class SubscriptionRequestTest(unittest.TestCase):
 
 
 class SubscriptionTest(unittest.TestCase):
-    def test_from_dict(self):
+    def test_from_beeline_struct(self):
         data = json.loads(
             '''
             {"subscriptionId": "jsjkgksj12323",
@@ -116,7 +117,7 @@ class SubscriptionTest(unittest.TestCase):
             "url":"test.io"}
             '''
         )
-        subs = Subscription.from_dict(data)
+        subs = Subscription.from_beeline_struct(data)
         assert subs.subscription_id == "jsjkgksj12323"
         assert subs.target_type == "ABONENT"
         assert subs.target_id == "jsjkgksj12323"
@@ -143,21 +144,21 @@ class SubscriptionTest(unittest.TestCase):
 
 
 class IcrNumberResultTest(TestCase):
-    def test_from_dict(self):
+    def test_from_beeline_struct(self):
         data = json.loads(
             '''
             {"phoneNumber": "+793799992",
             "status":"TEST"}
             '''
         )
-        icr_number_result = IcrNumberResult.from_dict(data)
+        icr_number_result = IcrNumberResult.from_beeline_struct(data)
         assert icr_number_result.phone_number == "+793799992"
         assert icr_number_result.status == "TEST"
         assert icr_number_result.error is None
         return icr_number_result
 
     def test_to_beeline_struct(self):
-        icr_number_result = self.test_from_dict()
+        icr_number_result = self.test_from_beeline_struct()
         struct = icr_number_result.to_beeline_struct()
         assert struct['phoneNumber'] == "+793799992"
         assert struct['status'] == "TEST"
@@ -165,47 +166,47 @@ class IcrNumberResultTest(TestCase):
 
 
 class IcrRouteRuleTest(unittest.TestCase):
-    def test_from_dict(self):
+    def test_from_beeline_struct(self):
         data = json.loads(
             '''
             {"inboundNumber": "+793799992",
             "extension":"2310"}
             '''
         )
-        icr_route_rule = IcrRouteRule.from_dict(data)
+        icr_route_rule = IcrRouteRule.from_beeline_struct(data)
         assert icr_route_rule.inbound_number == "+793799992"
         assert icr_route_rule.extension == "2310"
         return icr_route_rule
 
     def test_to_beeline_struct(self):
-        icr_route_rule = self.test_from_dict()
+        icr_route_rule = self.test_from_beeline_struct()
         struct = icr_route_rule.to_beeline_struct()
         assert struct['inboundNumber'] == "+793799992"
         assert struct['extension'] == "2310"
 
 
 class AnswerTest(unittest.TestCase):
-    def test_from_dict(self):
+    def test_from_beeline_struct(self):
         data = json.loads(
             '''
             {"choice": "B_1",
             "answer":"test"}
             '''
         )
-        answer = Answer.from_dict(data)
+        answer = Answer.from_beeline_struct(data)
         assert answer.choice == "B_1"
         assert answer.answer == "test"
         return answer
 
     def test_to_beeline_struct(self):
-        answer = self.test_from_dict()
+        answer = self.test_from_beeline_struct()
         struct = answer.to_beeline_struct()
         assert struct['choice'] == 'B_1'
         assert struct['answer'] == 'test'
 
 
 class VoiceCampaignScheduleTest(unittest.TestCase):
-    def test_from_dict(self):
+    def test_from_beeline_struct(self):
         data = json.loads(
             '''
             {"tryQuantity": "Q1",
@@ -214,7 +215,7 @@ class VoiceCampaignScheduleTest(unittest.TestCase):
             "schedule":"BUSINESS_DAY"}
             '''
         )
-        voice_campaign_schedule = VoiceCampaignSchedule.from_dict(data)
+        voice_campaign_schedule = VoiceCampaignSchedule.from_beeline_struct(data)
         assert voice_campaign_schedule.try_quantity == "Q1"
         assert voice_campaign_schedule.from_hour == "H1"
         assert voice_campaign_schedule.to_hour == "H4"
@@ -222,7 +223,7 @@ class VoiceCampaignScheduleTest(unittest.TestCase):
         return voice_campaign_schedule
 
     def test_to_beeline_struct(self):
-        voice_campaign_schedule = self.test_from_dict()
+        voice_campaign_schedule = self.test_from_beeline_struct()
         struct = voice_campaign_schedule.to_beeline_struct()
         assert struct['tryQuantity'] == "Q1"
         assert struct['fromHour'] == "H1"
@@ -231,27 +232,27 @@ class VoiceCampaignScheduleTest(unittest.TestCase):
 
 
 class DateAndTimeTest(unittest.TestCase):
-    def test_from_dict(self):
+    def test_from_beeline_struct(self):
         data = json.loads(
             '''
             {"date": "2021-01-01",
             "time":"00:00:23"}
             '''
         )
-        dt = DateAndTime.from_dict(data)
+        dt = DateAndTime.from_beeline_struct(data)
         assert dt.date == parse('2021-01-01').replace(tzinfo=pytz.utc)
         assert dt.time == '00:00:23'
         return dt
 
     def test_to_beeline_struct(self):
-        dt = self.test_from_dict()
+        dt = self.test_from_beeline_struct()
         struct = dt.to_beeline_struct()
         assert struct['date'] == '2021-01-01'
         assert struct['time'] == '00:00:23'
 
 
 class VoiceCampaignTest(unittest.TestCase):
-    def test_from_dict(self):
+    def test_from_beeline_struct(self):
         data = json.loads(
             '''
             {"name": "MyVoiceCampaign",
@@ -269,7 +270,7 @@ class VoiceCampaignTest(unittest.TestCase):
             }
             '''
         )
-        vc = VoiceCampaign.from_dict(data)
+        vc = VoiceCampaign.from_beeline_struct(data)
         assert vc.name == 'MyVoiceCampaign'
         assert vc.status == 'SUSPENDED'
         assert vc.record_id == 'hhyth1231432'
@@ -278,9 +279,9 @@ class VoiceCampaignTest(unittest.TestCase):
         assert vc.phones == ['93799992']
         assert vc.phone_number == '+799999999'
         assert vc.schedule == VoiceCampaignSchedule('Q1', 'H0', 'H4', 'ALL_WEEK')
-        assert vc.from_ == DateAndTime('2021-01-01', '00:00:00')
-        assert vc.to_ == DateAndTime('2021-12-01', '23:59:59')
-        assert vc.abonent == Abonent.from_dict(
+        assert vc.from_ == DateAndTime(parse_datetime('2021-01-01'), '00:00:00')
+        assert vc.to_ == DateAndTime(parse_datetime('2021-12-01'), '23:59:59')
+        assert vc.abonent == Abonent.from_beeline_struct(
             json.loads(
                 '''
                 {"userId": "9379992@beeline.ru", "phone": "9379992", "firstName": "Ivan", "lastName": "Moody"}'''
