@@ -8,6 +8,9 @@ from beeline_portal.models import (
     SubscriptionRequest,
     Subscription,
     IcrNumberResult,
+    IcrRouteRule,
+    Answer,
+    VoiceCampaignSchedule,
 )
 
 
@@ -147,3 +150,77 @@ class IcrNumberResultTest(TestCase):
         assert icr_number_result.phone_number == "+793799992"
         assert icr_number_result.status == "TEST"
         assert icr_number_result.error is None
+        return icr_number_result
+
+    def test_to_beeline_struct(self):
+        icr_number_result = self.test_from_dict()
+        struct = icr_number_result.to_beeline_struct()
+        assert struct['phoneNumber'] == "+793799992"
+        assert struct['status'] == "TEST"
+        assert struct.get('error') is None
+
+
+class IcrRouteRuleTest(unittest.TestCase):
+    def test_from_dict(self):
+        data = json.loads(
+            '''
+            {"inboundNumber": "+793799992",
+            "extension":"2310"}
+            '''
+        )
+        icr_route_rule = IcrRouteRule.from_dict(data)
+        assert icr_route_rule.inbound_number == "+793799992"
+        assert icr_route_rule.extension == "2310"
+        return icr_route_rule
+
+    def test_to_beeline_struct(self):
+        icr_route_rule = self.test_from_dict()
+        struct = icr_route_rule.to_beeline_struct()
+        assert struct['inboundNumber'] == "+793799992"
+        assert struct['extension'] == "2310"
+
+
+class AnswerTest(unittest.TestCase):
+    def test_from_dict(self):
+        data = json.loads(
+            '''
+            {"choice": "B_1",
+            "answer":"test"}
+            '''
+        )
+        answer = Answer.from_dict(data)
+        assert answer.choice == "B_1"
+        assert answer.answer == "test"
+        return answer
+
+    def test_to_beeline_struct(self):
+        answer = self.test_from_dict()
+        struct = answer.to_beeline_struct()
+        assert struct['choice'] == 'B_1'
+        assert struct['answer'] == 'test'
+
+
+class VoiceCampaignScheduleTest(unittest.TestCase):
+    def test_from_dict(self):
+        data = json.loads(
+            '''
+            {"tryQuantity": "Q1",
+            "fromHour":"H1",
+            "toHour":"H4",
+            "schedule":"BUSINESS_DAY"}
+            '''
+        )
+        voice_campaign_schedule = VoiceCampaignSchedule.from_dict(data)
+        assert voice_campaign_schedule.try_quantity == "Q1"
+        assert voice_campaign_schedule.from_hour == "H1"
+        assert voice_campaign_schedule.to_hour == "H4"
+        assert voice_campaign_schedule.schedule == "BUSINESS_DAY"
+        return voice_campaign_schedule
+
+    def test_to_beeline_struct(self):
+        voice_campaign_schedule = self.test_from_dict()
+        struct = voice_campaign_schedule.to_beeline_struct()
+        assert struct['tryQuantity'] == "Q1"
+        assert struct['fromHour'] == "H1"
+        assert struct['toHour'] == "H4"
+        assert struct['schedule'] == "BUSINESS_DAY"

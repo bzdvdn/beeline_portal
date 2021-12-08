@@ -141,7 +141,7 @@ class IcrNumberResult(BaseModel):
         return {
             'phoneNumber': self.phone_number,
             'status': self.status,
-            'status': self.error,
+            'error': self.error,
         }
 
 
