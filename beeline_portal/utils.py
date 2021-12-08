@@ -1,5 +1,5 @@
 import pytz
-from typing import Optional
+from dateutil.parser import parse
 from datetime import datetime
 
 
@@ -8,7 +8,7 @@ DATE_FORMAT = '%Y-%m-%d'
 
 
 def parse_datetime(s: str) -> datetime:
-    return datetime.strptime(s, DATETIME_FORMAT).replace(tzinfo=pytz.utc)
+    return parse(s).replace(tzinfo=pytz.utc)
 
 
 def format_datetime(dt: datetime) -> str:

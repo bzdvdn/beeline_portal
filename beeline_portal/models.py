@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 from abc import ABC
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 from .utils import (
     format_datetime,
@@ -25,7 +25,7 @@ class Abonent(BaseModel):
     phone: str
     first_name: str
     last_name: str
-    extension: str
+    extension: Optional[str] = None
     email: Optional[str] = None
     department: Optional[str] = None
 
@@ -36,7 +36,7 @@ class Abonent(BaseModel):
             model_dict['phone'],
             model_dict['firstName'],
             model_dict['lastName'],
-            model_dict['extension'],
+            model_dict.get('extension'),
             model_dict.get('email'),
             model_dict.get('department'),
         )
@@ -47,8 +47,9 @@ class Abonent(BaseModel):
             'phone': self.phone,
             'firstName': self.first_name,
             'lastName': self.last_name,
-            'extension': self.extension,
         }
+        if self.extension:
+            struct['extension'] = self.extension
         if self.email:
             struct['email'] = self.email
         if self.department:
@@ -206,6 +207,10 @@ class VoiceCampaignSchedule(BaseModel):
 class DateAndTime(BaseModel):
     date: datetime
     time: str
+
+    def __post_init__(self):
+        if not isinstance(self.date, datetime):
+            self.date = parse_datetime(self.date)
 
     @classmethod
     def from_dict(cls, model_dict: dict) -> 'DateAndTime':

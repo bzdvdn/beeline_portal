@@ -1,15 +1,19 @@
 import unittest
+import pytz
 import json
 from unittest.case import TestCase
+from dateutil.parser import parse
 
 from beeline_portal.models import (
     Abonent,
+    DateAndTime,
     Number,
     SubscriptionRequest,
     Subscription,
     IcrNumberResult,
     IcrRouteRule,
     Answer,
+    VoiceCampaign,
     VoiceCampaignSchedule,
 )
 
@@ -224,3 +228,62 @@ class VoiceCampaignScheduleTest(unittest.TestCase):
         assert struct['fromHour'] == "H1"
         assert struct['toHour'] == "H4"
         assert struct['schedule'] == "BUSINESS_DAY"
+
+
+class DateAndTimeTest(unittest.TestCase):
+    def test_from_dict(self):
+        data = json.loads(
+            '''
+            {"date": "2021-01-01",
+            "time":"00:00:23"}
+            '''
+        )
+        dt = DateAndTime.from_dict(data)
+        assert dt.date == parse('2021-01-01').replace(tzinfo=pytz.utc)
+        assert dt.time == '00:00:23'
+        return dt
+
+    def test_to_beeline_struct(self):
+        dt = self.test_from_dict()
+        struct = dt.to_beeline_struct()
+        assert struct['date'] == '2021-01-01'
+        assert struct['time'] == '00:00:23'
+
+
+class VoiceCampaignTest(unittest.TestCase):
+    def test_from_dict(self):
+        data = json.loads(
+            '''
+            {"name": "MyVoiceCampaign",
+            "status":"SUSPENDED",
+            "recordId":"hhyth1231432",
+            "type":"QUESTION",
+            "answers": [{"choice":"B1", "answer":"test"}],
+            "audioFile":"<link>",
+            "phones": ["93799992"],
+            "phoneNumber": "+799999999",
+            "schedule": {"tryQuantity": "Q1", "fromHour": "H0", "toHour": "H4", "schedule": "ALL_WEEK"},
+            "from": {"date": "2021-01-01", "time":"00:00:00"},
+            "to": {"date": "2021-12-01", "time":"23:59:59"},
+            "abonent": {"userId": "9379992@beeline.ru", "phone": "9379992", "firstName": "Ivan", "lastName": "Moody"}
+            }
+            '''
+        )
+        vc = VoiceCampaign.from_dict(data)
+        assert vc.name == 'MyVoiceCampaign'
+        assert vc.status == 'SUSPENDED'
+        assert vc.record_id == 'hhyth1231432'
+        assert vc.answers == [Answer("B1", "test")]
+        assert vc.audio_file == '<link>'
+        assert vc.phones == ['93799992']
+        assert vc.phone_number == '+799999999'
+        assert vc.schedule == VoiceCampaignSchedule('Q1', 'H0', 'H4', 'ALL_WEEK')
+        assert vc.from_ == DateAndTime('2021-01-01', '00:00:00')
+        assert vc.to_ == DateAndTime('2021-12-01', '23:59:59')
+        assert vc.abonent == Abonent.from_dict(
+            json.loads(
+                '''
+                {"userId": "9379992@beeline.ru", "phone": "9379992", "firstName": "Ivan", "lastName": "Moody"}'''
+            )
+        )
+
