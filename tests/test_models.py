@@ -15,6 +15,10 @@ from beeline_portal.models import (
     Answer,
     VoiceCampaign,
     VoiceCampaignSchedule,
+    VoiceCampaignQuestion,
+    VoiceCampaignAnswer,
+    VoiceCampaignInfoNumber,
+    VoiceCampaignInfoReport,
 )
 from beeline_portal.utils import parse_datetime
 
@@ -287,4 +291,210 @@ class VoiceCampaignTest(unittest.TestCase):
                 {"userId": "9379992@beeline.ru", "phone": "9379992", "firstName": "Ivan", "lastName": "Moody"}'''
             )
         )
+
+
+class VoiceCampaignQuestionTest(unittest.TestCase):
+    def test_to_beeline_struct(self):
+        answers = [Answer('Q1', 'gadget')]
+        schedule = VoiceCampaignSchedule('Q1', 'H1', 'H4', 'BUSINESS_DAY')
+        from_ = DateAndTime(parse_datetime('2021-11-11'), '00:00')
+        to_ = DateAndTime(parse_datetime('2021-11-21'), '00:00')
+        campaign = VoiceCampaignQuestion(
+            'q_campaign',
+            answers,
+            "<file>",
+            ['+793799992'],
+            '+7123212432',
+            schedule,
+            from_,
+            to_,
+        )
+        struct = campaign.to_beeline_struct()
+        assert struct['name'] == 'q_campaign'
+        assert struct['answers'] == [{'choice': 'Q1', 'answer': 'gadget'}]
+        assert struct['audioFile'] == "<file>"
+        assert struct['phones'] == ['+793799992']
+        assert struct['phoneNumber'] == '+7123212432'
+        assert struct['schedule']['tryQuantity'] == "Q1"
+        assert struct['schedule']['fromHour'] == "H1"
+        assert struct['schedule']['toHour'] == "H4"
+        assert struct['schedule']['schedule'] == "BUSINESS_DAY"
+        assert struct['from']['date'] == "2021-11-11"
+        assert struct['from']['time'] == "00:00"
+        assert struct['to']['date'] == "2021-11-21"
+        assert struct['to']['time'] == "00:00"
+
+
+class VoiceCampaignAnswerTest(unittest.TestCase):
+    def test_from_beeline_struct(self):
+        data = json.loads(
+            '''
+            {"answer": "test",
+            "answerCode":"1",
+            "amount":1
+            }
+            '''
+        )
+        vca = VoiceCampaignAnswer.from_beeline_struct(data)
+        assert vca.answer == 'test'
+        assert vca.answer_code == '1'
+        assert vca.amount == 1
+        return vca
+
+    def test_to_beeline_struct(self):
+        vca = self.test_from_beeline_struct()
+        struct = vca.to_beeline_struct()
+        assert struct['answer'] == 'test'
+        assert struct['answerCode'] == '1'
+        assert struct['amount'] == 1
+
+
+class VoiceCampaignInfoNumberTest(unittest.TestCase):
+    def test_from_beeline_struct(self):
+        data = json.loads(
+            '''
+            {"phone": "+793799992",
+            "result":"test",
+            "attempts":"attempts",
+            "lastAttemptDate":"2021-11-01",
+            "isDone":false,
+            "answer":"done",
+            "answerCode":"Q1"
+            }
+            '''
+        )
+        vc_info_number = VoiceCampaignInfoNumber.from_beeline_struct(data)
+        assert vc_info_number.phone == '+793799992'
+        assert vc_info_number.result == 'test'
+        assert vc_info_number.attempts == 'attempts'
+        assert vc_info_number.last_attempt_date == parse_datetime("2021-11-01")
+        assert vc_info_number.is_done == False
+        assert vc_info_number.answer == 'done'
+        assert vc_info_number.answer_code == 'Q1'
+        return vc_info_number
+
+    def test_to_beeline_struct(self):
+        vc_info_number = self.test_from_beeline_struct()
+        struct = vc_info_number.to_beeline_struct()
+        assert struct['phone'] == '+793799992'
+        assert struct['result'] == 'test'
+        assert struct['attempts'] == 'attempts'
+        assert struct['lastAttemptDate'] == '2021-11-01'
+        assert struct['isDone'] == False
+        assert struct['answer'] == 'done'
+        assert struct['answerCode'] == 'Q1'
+
+
+class VoiceCampaignInfoReportTest(unittest.TestCase):
+    def test_from_beeline_struct(self):
+        data = json.loads(
+            '''
+            {"campaignName": "VoiceCampaign1",
+            "reportDate":"2021-11-01",
+            "client":"bastion",
+            "state":"PLANNED",
+            "startDate":"2021-11-01",
+            "finishDate":"2021-11-02",
+            "total":23,
+            "processed":10,
+            "success":10,
+            "abandoned":2,
+            "busyOrNoAnswer":0,
+            "numberList":[{"phone": "+793799992",
+            "result":"test",
+            "attempts":"attempts",
+            "lastAttemptDate":"2021-11-01",
+            "isDone":false,
+            "answer":"done",
+            "answerCode":"Q1"
+            }],
+            "abonent": {"userId": "9379992@beeline.ru",
+            "phone":"9379992",
+            "firstName": "TestUser",
+            "lastName": "TestUser1",
+            "email": null,
+            "department": "test",
+            "extension": "2310"},
+            "answerList": [{"answer": "Test", "answerCode": "Q1", "amount": 2}]
+            }
+            '''
+        )
+        vc_info_report = VoiceCampaignInfoReport.from_beeline_struct(data)
+        assert vc_info_report.campaign_name == 'VoiceCampaign1'
+        assert vc_info_report.report_date == parse_datetime('2021-11-01')
+        assert vc_info_report.client == 'bastion'
+        assert vc_info_report.state == 'PLANNED'
+        assert vc_info_report.start_date == parse_datetime('2021-11-01')
+        assert vc_info_report.finish_date == parse_datetime('2021-11-02')
+        assert vc_info_report.total == 23
+        assert vc_info_report.processed == 10
+        assert vc_info_report.success == 10
+        assert vc_info_report.abandoned == 2
+        assert vc_info_report.number_list == [
+            VoiceCampaignInfoNumber.from_beeline_struct(
+                {
+                    "phone": "+793799992",
+                    "result": "test",
+                    "attempts": "attempts",
+                    "lastAttemptDate": "2021-11-01",
+                    "isDone": False,
+                    "answer": "done",
+                    "answerCode": "Q1",
+                }
+            )
+        ]
+        assert vc_info_report.abonent == Abonent.from_beeline_struct(
+            {
+                "userId": "9379992@beeline.ru",
+                "phone": "9379992",
+                "firstName": "TestUser",
+                "lastName": "TestUser1",
+                "email": None,
+                "department": "test",
+                "extension": "2310",
+            }
+        )
+        assert vc_info_report.answer_list == [
+            VoiceCampaignAnswer.from_beeline_struct(
+                {"answer": "Test", "answerCode": "Q1", "amount": 2}
+            )
+        ]
+        return vc_info_report
+
+    def test_to_beeline_struct(self):
+        vc_info_report = self.test_from_beeline_struct()
+        struct = vc_info_report.to_beeline_struct()
+        assert struct['campaignName'] == 'VoiceCampaign1'
+        assert struct['client'] == 'bastion'
+        assert struct['state'] == 'PLANNED'
+        assert struct['startDate'] == '2021-11-01'
+        assert struct['reportDate'] == '2021-11-01'
+        assert struct['finishDate'] == '2021-11-02'
+        assert struct['total'] == 23
+        assert struct['processed'] == 10
+        assert struct['success'] == 10
+        assert struct['abandoned'] == 2
+        assert struct['busyOrNoAnswer'] == 0
+        assert struct['numberList'] == [
+            {
+                "phone": "+793799992",
+                "result": "test",
+                "attempts": "attempts",
+                "lastAttemptDate": "2021-11-01",
+                "isDone": False,
+                "answer": "done",
+                "answerCode": "Q1",
+            }
+        ]
+        assert struct['abonent'] == {
+            "userId": "9379992@beeline.ru",
+            "phone": "9379992",
+            "firstName": "TestUser",
+            "lastName": "TestUser1",
+            "department": "test",
+            "extension": "2310",
+        }
+        assert struct['answerList'] == [
+            {"answer": "Test", "answerCode": "Q1", "amount": 2}
+        ]
 
