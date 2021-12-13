@@ -22,3 +22,6 @@ def format_date(d: datetime) -> str:
 def parse_datetime_from_milliseconds(m: int) -> datetime:
     return datetime.fromtimestamp(m / 1000)
 
+
+def to_milliseconds(dt: datetime) -> int:
+    return dt.timestamp() * 1000

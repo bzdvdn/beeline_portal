@@ -8,6 +8,7 @@ from .utils import (
     parse_datetime_from_milliseconds,
     parse_datetime,
     format_date,
+    to_milliseconds,
 )
 
 
@@ -432,6 +433,7 @@ class StatRecord(BaseModel):
     direction: str
     status: str
     phone: str
+    duration: int
     department: Optional[str] = None
     call_forward: Optional[str] = None
 
@@ -443,15 +445,17 @@ class StatRecord(BaseModel):
             beeline_struct['direction'],
             beeline_struct['status'],
             beeline_struct['phone'],
+            beeline_struct['duration'],
             beeline_struct.get('department'),
             beeline_struct.get('callForward'),
         )
 
-    def to_dict(self) -> dict:
+    def to_beeline_struct(self) -> dict:
         struct = {
-            'startDate': format_datetime(self.start_date),
+            'startDate': to_milliseconds(self.start_date),
             'abonent': self.abonent.to_beeline_struct(),
             'direction': self.direction,
+            'duration': self.duration,
             'status': self.status,
             'phone': self.phone,
         }
@@ -468,6 +472,7 @@ class StatRecordV2(BaseModel):
     abonent: Abonent
     direction: str
     status: str
+    duration: int
     phone_to: Optional[str] = None
     phone_from: Optional[str] = None
     department: Optional[str] = None
@@ -480,18 +485,20 @@ class StatRecordV2(BaseModel):
             Abonent.from_beeline_struct(beeline_struct['abonent']),
             beeline_struct['direction'],
             beeline_struct['status'],
+            beeline_struct['duration'],
             beeline_struct.get('phone_to'),
             beeline_struct.get('phone_from'),
             beeline_struct.get('department'),
             beeline_struct.get('callForward'),
         )
 
-    def to_dict(self) -> dict:
+    def to_beeline_struct(self) -> dict:
         struct = {
-            'startDate': format_datetime(self.start_date),
+            'startDate': to_milliseconds(self.start_date),
             'abonent': self.abonent.to_beeline_struct(),
             'direction': self.direction,
             'status': self.status,
+            'duration': self.duration,
         }
         if self.phone_from:
             struct['phone_from'] = self.phone_from

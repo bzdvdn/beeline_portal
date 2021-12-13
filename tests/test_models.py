@@ -19,8 +19,14 @@ from beeline_portal.models import (
     VoiceCampaignAnswer,
     VoiceCampaignInfoNumber,
     VoiceCampaignInfoReport,
+    StatRecord,
+    StatRecordV2,
 )
-from beeline_portal.utils import parse_datetime
+from beeline_portal.utils import (
+    parse_datetime,
+    parse_datetime_from_milliseconds,
+    to_milliseconds,
+)
 
 
 class AbonentTest(unittest.TestCase):
@@ -497,4 +503,105 @@ class VoiceCampaignInfoReportTest(unittest.TestCase):
         assert struct['answerList'] == [
             {"answer": "Test", "answerCode": "Q1", "amount": 2}
         ]
+
+
+class StatRecordTest(unittest.TestCase):
+    def test_from_beeline_struct(self):
+        data = json.loads(
+            '''
+            {
+            "startDate": 1638432499281,
+            "direction": "INBOUND",
+            "phone": "+793799992",
+            "duration": 0,
+            "status": "MISSED",
+            "abonent": {"userId": "9379992@beeline.ru",
+            "phone":"9379992",
+            "firstName": "TestUser",
+            "lastName": "TestUser1",
+            "email": null,
+            "department": "test",
+            "extension": "2310"}
+            }
+            '''
+        )
+        statistic = StatRecord.from_beeline_struct(data)
+        assert statistic.start_date == parse_datetime_from_milliseconds(1638432499281)
+        assert statistic.direction == 'INBOUND'
+        assert statistic.phone == '+793799992'
+        assert statistic.duration == 0
+        assert statistic.status == 'MISSED'
+        assert statistic.abonent.user_id == '9379992@beeline.ru'
+        assert statistic.abonent.phone == '9379992'
+        assert statistic.abonent.first_name == 'TestUser'
+        assert statistic.abonent.last_name == 'TestUser1'
+        assert statistic.abonent.email is None
+        assert statistic.abonent.department == 'test'
+        assert statistic.abonent.extension == '2310'
+        return statistic
+
+    def test_to_beeline_struct(self):
+        stats = self.test_from_beeline_struct()
+        struct = stats.to_beeline_struct()
+        assert struct['startDate'] == 1638432499281
+        assert struct['direction'] == 'INBOUND'
+        assert struct['phone'] == '+793799992'
+        assert struct['duration'] == 0
+        assert struct['status'] == 'MISSED'
+        assert struct['abonent'] == {
+            "userId": "9379992@beeline.ru",
+            "phone": "9379992",
+            "firstName": "TestUser",
+            "lastName": "TestUser1",
+            "department": "test",
+            "extension": "2310",
+        }
+
+
+class StatRecordV2Test(unittest.TestCase):
+    def test_from_beeline_struct(self):
+        data = json.loads(
+            '''
+            {
+            "startDate": 1638432499281,
+            "direction": "INBOUND",
+            "phone_from": "+79379992",
+            "duration": 0,
+            "status": "MISSED",
+            "abonent": {"userId": "9379992@beeline.ru",
+            "phone":"9379992",
+            "firstName": "TestUser",
+            "lastName": "TestUser1",
+            "email": null,
+            "department": "test",
+            "extension": "2310"}
+            }
+            '''
+        )
+        stats = StatRecordV2.from_beeline_struct(data)
+        assert stats.start_date == parse_datetime_from_milliseconds(1638432499281)
+        assert stats.direction == 'INBOUND'
+        assert stats.phone_from == '+79379992'
+        assert stats.phone_to is None
+        assert stats.duration == 0
+        assert stats.status == 'MISSED'
+        assert stats.abonent.user_id == '9379992@beeline.ru'
+        return stats
+
+    def test_to_beeline_struct(self):
+        stats = self.test_from_beeline_struct()
+        struct = stats.to_beeline_struct()
+        assert struct['startDate'] == 1638432499281
+        assert struct['direction'] == 'INBOUND'
+        assert struct['phone_from'] == '+79379992'
+        assert struct['duration'] == 0
+        assert struct['status'] == 'MISSED'
+        assert struct['abonent'] == {
+            "userId": "9379992@beeline.ru",
+            "phone": "9379992",
+            "firstName": "TestUser",
+            "lastName": "TestUser1",
+            "department": "test",
+            "extension": "2310",
+        }
 
