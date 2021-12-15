@@ -24,4 +24,4 @@ def parse_datetime_from_milliseconds(m: int) -> datetime:
 
 
 def to_milliseconds(dt: datetime) -> int:
-    return dt.timestamp() * 1000
+    return int(dt.timestamp() * 1000)
