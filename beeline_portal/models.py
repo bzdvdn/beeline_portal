@@ -128,28 +128,6 @@ class Subscription(BaseModel):
 
 
 @dataclass
-class IcrNumberResult(BaseModel):
-    phone_number: str
-    status: str
-    error: Optional[dict] = None
-
-    @classmethod
-    def from_beeline_struct(cls, beeline_struct: dict) -> 'IcrNumberResult':
-        return cls(
-            beeline_struct['phoneNumber'],
-            beeline_struct['status'],
-            beeline_struct.get('error'),
-        )
-
-    def to_beeline_struct(self) -> dict:
-        return {
-            'phoneNumber': self.phone_number,
-            'status': self.status,
-            'error': self.error,
-        }
-
-
-@dataclass
 class IcrRouteRule(BaseModel):
     inbound_number: str
     extension: str
@@ -698,14 +676,14 @@ class CallRecord(BaseModel):
 class IcrNumbersResult(BaseModel):
     phone_number: str
     status: str
-    error: Optional[dict]
+    error: Optional[dict] = None
 
     @classmethod
     def from_beeline_struct(cls, beeline_struct: dict) -> 'IcrNumbersResult':
         return cls(
             beeline_struct['phoneNumber'],
             beeline_struct['status'],
-            beeline_struct.get('status'),
+            beeline_struct.get('error'),
         )
 
     def to_beeline_struct(self) -> dict:
@@ -765,7 +743,7 @@ class VoiceCampaignMessage(BaseModel):
         return {
             'name': self.name,
             'audioFile': self.audio_file,
-            'audioFile': self.phones,
+            'phones': self.phones,
             'phoneNumber': self.phone_number,
             'schedule': self.schedule.to_beeline_struct(),
             'from': self.from_.to_beeline_struct(),

@@ -10,7 +10,6 @@ from beeline_portal.models import (
     Number,
     SubscriptionRequest,
     Subscription,
-    IcrNumberResult,
     IcrRouteRule,
     Answer,
     VoiceCampaign,
@@ -19,12 +18,18 @@ from beeline_portal.models import (
     VoiceCampaignAnswer,
     VoiceCampaignInfoNumber,
     VoiceCampaignInfoReport,
+    VoiceCampaignMessage,
     StatRecord,
     StatRecordV2,
     Cfb,
     CfbResponse,
     CfsRule,
     CfsStatusResponse,
+    BwlRule,
+    BwlStatusResponse,
+    CallRecord,
+    IcrNumbersResult,
+    IcrRouteResult,
 )
 from beeline_portal.utils import (
     parse_datetime,
@@ -154,28 +159,6 @@ class SubscriptionTest(unittest.TestCase):
         assert struct['subscriptionType'] == "BASIC_CALL"
         assert struct['expires'] == 2132543
         assert struct['url'] == "test.io"
-
-
-class IcrNumberResultTest(TestCase):
-    def test_from_beeline_struct(self):
-        data = json.loads(
-            '''
-            {"phoneNumber": "+793799992",
-            "status":"TEST"}
-            '''
-        )
-        icr_number_result = IcrNumberResult.from_beeline_struct(data)
-        assert icr_number_result.phone_number == "+793799992"
-        assert icr_number_result.status == "TEST"
-        assert icr_number_result.error is None
-        return icr_number_result
-
-    def test_to_beeline_struct(self):
-        icr_number_result = self.test_from_beeline_struct()
-        struct = icr_number_result.to_beeline_struct()
-        assert struct['phoneNumber'] == "+793799992"
-        assert struct['status'] == "TEST"
-        assert struct.get('error') is None
 
 
 class IcrRouteRuleTest(unittest.TestCase):
@@ -508,6 +491,72 @@ class VoiceCampaignInfoReportTest(unittest.TestCase):
         ]
 
 
+class VoiceCampaignMessageTest(unittest.TestCase):
+    def test_from_beeline_struct(self):
+        data = json.loads(
+            '''
+                {
+                    "name": "Message campaign",
+                    "audioFile": "file_id",
+                    "phones": ["200"],
+                    "phoneNumber": "+79379999992",
+                    "schedule": {
+                        "tryQuantity": "Q1",
+                        "fromHour":"H1",
+                        "toHour":"H4",
+                        "schedule":"BUSINESS_DAY"
+                    },
+                    "from": {
+                        "date": "2021-01-01",
+                        "time":"00:00:23"
+                    },
+                    "to": {
+                        "date": "2021-01-01",
+                        "time":"00:00:23"
+                    }
+                }
+            '''
+        )
+        vc_message = VoiceCampaignMessage.from_beeline_struct(data)
+        assert vc_message.name == "Message campaign"
+        assert vc_message.audio_file == "file_id"
+        assert vc_message.phones == ['200']
+        assert vc_message.phone_number == "+79379999992"
+        assert vc_message.schedule == VoiceCampaignSchedule.from_beeline_struct(
+            {
+                "tryQuantity": "Q1",
+                "fromHour": "H1",
+                "toHour": "H4",
+                "schedule": "BUSINESS_DAY",
+            }
+        )
+        assert vc_message.from_ == DateAndTime.from_beeline_struct(
+            {"date": "2021-01-01", "time": "00:00:23"}
+        )
+        assert vc_message.to_ == DateAndTime.from_beeline_struct(
+            {"date": "2021-01-01", "time": "00:00:23"}
+        )
+        return vc_message
+
+    def test_to_beeline_struct(self):
+        vc_message = self.test_from_beeline_struct()
+        struct = vc_message.to_beeline_struct()
+        assert struct == {
+            "name": "Message campaign",
+            "audioFile": "file_id",
+            "phones": ["200"],
+            "phoneNumber": "+79379999992",
+            "schedule": {
+                "tryQuantity": "Q1",
+                "fromHour": "H1",
+                "toHour": "H4",
+                "schedule": "BUSINESS_DAY",
+            },
+            "from": {"date": "2021-01-01", "time": "00:00:23"},
+            "to": {"date": "2021-01-01", "time": "00:00:23"},
+        }
+
+
 class StatRecordTest(unittest.TestCase):
     def test_from_beeline_struct(self):
         data = json.loads(
@@ -758,4 +807,239 @@ class CfsStatusResponseTest(unittest.TestCase):
                 "phoneList": ["+79399999992"],
             }
         ]
+
+
+class BwlRuleTest(unittest.TestCase):
+    def test_from_beeline_struct(self):
+        data = json.loads(
+            '''
+            {
+                "id": "1",
+                "name": "my bwl rule",
+                "forwardToPhone": "+793999992",
+                "schedule": "WORKING_TIME",
+                "phoneList": ["+79399999992"]
+            }
+            '''
+        )
+        bwl_rule = BwlRule.from_beeline_struct(data)
+        assert bwl_rule.name == 'my bwl rule'
+        assert bwl_rule.id_ == '1'
+        assert bwl_rule.forward_to_phone == '+793999992'
+        assert bwl_rule.schedule == 'WORKING_TIME'
+        assert bwl_rule.phone_list == ["+79399999992"]
+        return bwl_rule
+
+    def test_to_beeline_struct(self):
+        bwl_rule = self.test_from_beeline_struct()
+        struct = bwl_rule.to_beeline_struct()
+        assert struct == {
+            "id": "1",
+            "name": "my bwl rule",
+            "forwardToPhone": "+793999992",
+            "schedule": "WORKING_TIME",
+            "phoneList": ["+79399999992"],
+        }
+
+
+class BwlStatusResponseTest(unittest.TestCase):
+    def test_from_beeline_struct(self):
+        data = json.loads(
+            '''
+            {
+                "status": "BLACK_LIST_ON",
+                "blackList": [
+                    {
+                        "id": "1",
+                        "name": "my bwl rule",
+                        "forwardToPhone": "+793999992",
+                        "schedule": "WORKING_TIME",
+                        "phoneList": ["+79399999992"]
+                    }
+                ],
+                "whiteList": [
+                    {
+                        "id": "2",
+                        "name": "my bwl rule2",
+                        "forwardToPhone": "+793999999",
+                        "schedule": "WORKING_TIME",
+                        "phoneList": ["+79399999993"]
+                    }
+                ]
+            }
+            '''
+        )
+        bwl_status_response = BwlStatusResponse.from_beeline_struct(data)
+        assert bwl_status_response.status == 'BLACK_LIST_ON'
+        assert bwl_status_response.black_list == [
+            BwlRule.from_beeline_struct(
+                {
+                    "id": "1",
+                    "name": "my bwl rule",
+                    "forwardToPhone": "+793999992",
+                    "schedule": "WORKING_TIME",
+                    "phoneList": ["+79399999992"],
+                }
+            )
+        ]
+        assert bwl_status_response.white_list == [
+            BwlRule.from_beeline_struct(
+                {
+                    "id": "2",
+                    "name": "my bwl rule2",
+                    "forwardToPhone": "+793999999",
+                    "schedule": "WORKING_TIME",
+                    "phoneList": ["+79399999993"],
+                }
+            )
+        ]
+        return bwl_status_response
+
+    def test_to_beeline_struct(self):
+        bwl_status_response = self.test_from_beeline_struct()
+        struct = bwl_status_response.to_beeline_struct()
+        assert struct == {
+            "status": "BLACK_LIST_ON",
+            "blackList": [
+                {
+                    "id": "1",
+                    "name": "my bwl rule",
+                    "forwardToPhone": "+793999992",
+                    "schedule": "WORKING_TIME",
+                    "phoneList": ["+79399999992"],
+                }
+            ],
+            "whiteList": [
+                {
+                    "id": "2",
+                    "name": "my bwl rule2",
+                    "forwardToPhone": "+793999999",
+                    "schedule": "WORKING_TIME",
+                    "phoneList": ["+79399999993"],
+                }
+            ],
+        }
+
+
+class CallRecordTest(unittest.TestCase):
+    def test_from_beeline_struct(self):
+        data = json.loads(
+            '''
+            {
+                "id": "1",
+                "externalId": "2310123243543",
+                "callId": "2310123243541",
+                "phone": "+79399999993",
+                "direction": "INBOUND",
+                "date": "2021-01-01",
+                "duration": 2310,
+                "fileSize": 2310,
+                "comment": "test call",
+                "abonent": {
+                    "userId": "9379992@beeline.ru",
+                    "phone": "9379992",
+                    "firstName": "TestUser",
+                    "lastName": "TestUser1",
+                    "department": "test",
+                    "extension": "2310"
+                }
+            }                  
+        '''
+        )
+        call_record = CallRecord.from_beeline_struct(data)
+        assert call_record.id_ == "1"
+        assert call_record.external_id == "2310123243543"
+        assert call_record.call_id == "2310123243541"
+        assert call_record.phone == "+79399999993"
+        assert call_record.direction == "INBOUND"
+        assert call_record.date == parse_datetime("2021-01-01")
+        assert call_record.duration == 2310
+        assert call_record.file_size == 2310
+        assert call_record.abonent == Abonent.from_beeline_struct(
+            {
+                "userId": "9379992@beeline.ru",
+                "phone": "9379992",
+                "firstName": "TestUser",
+                "lastName": "TestUser1",
+                "department": "test",
+                "extension": "2310",
+            }
+        )
+        return call_record
+
+    def test_to_beeline_struct(self):
+        call_record = self.test_from_beeline_struct()
+        struct = call_record.to_beeline_struct()
+        assert struct == {
+            "id": "1",
+            "externalId": "2310123243543",
+            "callId": "2310123243541",
+            "phone": "+79399999993",
+            "direction": "INBOUND",
+            "date": "2021-01-01",
+            "duration": 2310,
+            "fileSize": 2310,
+            "comment": "test call",
+            "abonent": {
+                "userId": "9379992@beeline.ru",
+                "phone": "9379992",
+                "firstName": "TestUser",
+                "lastName": "TestUser1",
+                "department": "test",
+                "extension": "2310",
+            },
+        }
+
+
+class IcrNumbersResultTest(unittest.TestCase):
+    def test_from_beeline_struct(self):
+        data = json.loads(
+            '''
+                {
+                    "phoneNumber": "+73979999992",
+                    "status": "SUCCESS"
+                }
+            '''
+        )
+        icr_number_result = IcrNumbersResult.from_beeline_struct(data)
+        assert icr_number_result.phone_number == "+73979999992"
+        assert icr_number_result.status == "SUCCESS"
+        return icr_number_result
+
+    def test_to_beeline_struct(self):
+        icr_number_result = self.test_from_beeline_struct()
+        struct = icr_number_result.to_beeline_struct()
+        assert struct == {
+            "phoneNumber": "+73979999992",
+            "status": "SUCCESS",
+        }
+
+
+class IcrRouteResultTest(unittest.TestCase):
+    def test_from_beeline_struct(self):
+        data = json.loads(
+            '''
+                {
+                    "rule": {   
+                            "inboundNumber": "+793799992",
+                            "extension":"2310"
+                        },
+                    "status": "FAULT"
+                }
+            '''
+        )
+        icr_route_result = IcrRouteResult.from_beeline_struct(data)
+        assert icr_route_result.rule == IcrRouteRule.from_beeline_struct(
+            {"inboundNumber": "+793799992", "extension": "2310"}
+        )
+        assert icr_route_result.status == "FAULT"
+        return icr_route_result
+
+    def test_to_beeline_struct(self):
+        icr_route_result = self.test_from_beeline_struct()
+        struct = icr_route_result.to_beeline_struct()
+        assert struct == {
+            "rule": {"inboundNumber": "+793799992", "extension": "2310"},
+            "status": "FAULT",
+        }
 
