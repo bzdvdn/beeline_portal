@@ -21,11 +21,14 @@ from beeline_portal.models import (
     VoiceCampaignInfoReport,
     StatRecord,
     StatRecordV2,
+    Cfb,
+    CfbResponse,
+    CfsRule,
+    CfsStatusResponse,
 )
 from beeline_portal.utils import (
     parse_datetime,
     parse_datetime_from_milliseconds,
-    to_milliseconds,
 )
 
 
@@ -604,4 +607,155 @@ class StatRecordV2Test(unittest.TestCase):
             "department": "test",
             "extension": "2310",
         }
+
+
+class CfbTest(unittest.TestCase):
+    def test_from_beeline_struct(self):
+        data = json.loads(
+            '''
+            {
+            "forwardAllCallsPhone": "+79379992",
+            "forwardBusyPhone": "+79379991",
+            "forwardUnavailablePhone": "+79379993",
+            "forwardNotAnswerPhone": "+79379994",
+            "forwardNotAnswerTimeout": "123"
+            }
+            '''
+        )
+        cfb = Cfb.from_beeline_struct(data)
+        assert cfb.forward_all_calls_phone == '+79379992'
+        assert cfb.forward_busy_phone == '+79379991'
+        assert cfb.forward_unavailable_phone == '+79379993'
+        assert cfb.forward_not_answer_phone == '+79379994'
+        assert cfb.forward_not_answer_timeout == '123'
+        return cfb
+
+    def test_to_beeline_struct(self):
+        cfb = self.test_from_beeline_struct()
+        struct = cfb.to_beeline_struct()
+        assert struct == {
+            "forwardAllCallsPhone": "+79379992",
+            "forwardBusyPhone": "+79379991",
+            "forwardUnavailablePhone": "+79379993",
+            "forwardNotAnswerPhone": "+79379994",
+            "forwardNotAnswerTimeout": "123",
+        }
+
+
+class CfbResponseTest(unittest.TestCase):
+    def test_from_beeline_struct(self):
+        data = json.loads(
+            '''{
+            "status": "ON",
+            "cfb": {
+                    "forwardAllCallsPhone": "+79379992",
+                    "forwardBusyPhone": "+79379991",
+                    "forwardUnavailablePhone": "+79379993",
+                    "forwardNotAnswerPhone": "+79379994",
+                    "forwardNotAnswerTimeout": "123"
+                }
+            }
+            '''
+        )
+        cfb_response = CfbResponse.from_beeline_struct(data)
+        assert cfb_response.status == 'ON'
+        assert cfb_response.cfb.forward_all_calls_phone == '+79379992'
+        assert cfb_response.cfb.forward_busy_phone == '+79379991'
+        assert cfb_response.cfb.forward_unavailable_phone == '+79379993'
+        assert cfb_response.cfb.forward_not_answer_phone == '+79379994'
+        assert cfb_response.cfb.forward_not_answer_timeout == '123'
+        return cfb_response
+
+    def test_to_beeline_struct(self):
+        cfb_response = self.test_from_beeline_struct()
+        struct = cfb_response.to_beeline_struct()
+        assert struct['status'] == 'ON'
+        assert struct['cfb'] == {
+            "forwardAllCallsPhone": "+79379992",
+            "forwardBusyPhone": "+79379991",
+            "forwardUnavailablePhone": "+79379993",
+            "forwardNotAnswerPhone": "+79379994",
+            "forwardNotAnswerTimeout": "123",
+        }
+
+
+class CfsRuleTest(unittest.TestCase):
+    def test_from_beeline_struct(self):
+        data = json.loads(
+            '''
+            {
+                "id": "1",
+                "name": "my cfs rule",
+                "forwardToPhone": "+793999992",
+                "schedule": "WORKING_TIME",
+                "phoneList": ["+79399999992"]
+            }
+            '''
+        )
+        cfs_rule = CfsRule.from_beeline_struct(data)
+        assert cfs_rule.name == 'my cfs rule'
+        assert cfs_rule.id_ == '1'
+        assert cfs_rule.forward_to_phone == '+793999992'
+        assert cfs_rule.schedule == 'WORKING_TIME'
+        assert cfs_rule.phone_list == ["+79399999992"]
+        return cfs_rule
+
+    def test_to_beeline_struct(self):
+        cfs_rule = self.test_from_beeline_struct()
+        struct = cfs_rule.to_beeline_struct()
+        assert struct == {
+            "id": "1",
+            "name": "my cfs rule",
+            "forwardToPhone": "+793999992",
+            "schedule": "WORKING_TIME",
+            "phoneList": ["+79399999992"],
+        }
+
+
+class CfsStatusResponseTest(unittest.TestCase):
+    def test_from_beeline_struct(self):
+        data = json.loads(
+            '''
+            {
+                "isCfsServiceEnabled": true,
+                "ruleList": [
+                    {
+                        "id": "1",
+                        "name": "my cfs rule",
+                        "forwardToPhone": "+793999992",
+                        "schedule": "WORKING_TIME",
+                        "phoneList": ["+79399999992"]
+                    }
+                ]
+            }
+            '''
+        )
+        cfs_status_response = CfsStatusResponse.from_beeline_struct(data)
+        assert cfs_status_response.is_cfs_service_enabled is True
+        assert cfs_status_response.rule_list == [
+            CfsRule.from_beeline_struct(
+                {
+                    "id": "1",
+                    "name": "my cfs rule",
+                    "forwardToPhone": "+793999992",
+                    "schedule": "WORKING_TIME",
+                    "phoneList": ["+79399999992"],
+                }
+            )
+        ]
+        return cfs_status_response
+
+    def test_to_beeline_struct(self):
+        cfs_status_response = self.test_from_beeline_struct()
+        struct = cfs_status_response.to_beeline_struct()
+        assert struct['isCfsServiceEnabled'] is True
+        assert struct['ruleList'] == [
+            {
+                "id": "1",
+                "name": "my cfs rule",
+                "forwardToPhone": "+793999992",
+                "schedule": "WORKING_TIME",
+                "phoneList": ["+79399999992"],
+            }
+        ]
 
