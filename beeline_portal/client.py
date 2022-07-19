@@ -63,18 +63,22 @@ class BeelinePBX(object):
         method = getattr(self.session, http_method)
         try:
             r = method(url, json=data) if not audio_file else method(url, data=data)
-            response = r.json() if not file_ else r.content
+            try:
+                response = r.json() if not file_ else r.content
+            except JSONDecodeError:
+                return r.text
             if r.status_code > 204:
                 raise BeelinePBXException(response)
             return response
         except (ConnectionError, ConnectTimeout):
             raise BeelinePBXException(
-                {'errorCode': 500, 'description': 'Connection Error or cant',}
+                {
+                    'errorCode': 500,
+                    'description': 'Connection Error or cant',
+                }
             )
-        except JSONDecodeError:
-            return r.text
 
-    def get_abonents(self) -> map[Abonent]:
+    def get_abonents(self) -> map:
         response = self._send_api_request('get', 'abonents')
         return map(Abonent.from_beeline_struct, response)
 
@@ -147,7 +151,10 @@ class BeelinePBX(object):
         return {}
 
     def delete_extension_number(self, pattern: str) -> dict:
-        _ = self._send_api_request('delete', f'abonents/{pattern}/number',)
+        _ = self._send_api_request(
+            'delete',
+            f'abonents/{pattern}/number',
+        )
         return {}
 
     def get_cfb(self, pattern: str) -> CfbResponse:
@@ -161,7 +168,10 @@ class BeelinePBX(object):
         return {}
 
     def stop_cfb(self, pattern: str) -> dict:
-        _ = self._send_api_request('delete', f'abonents/{pattern}/cfb',)
+        _ = self._send_api_request(
+            'delete',
+            f'abonents/{pattern}/cfb',
+        )
         return {}
 
     def get_cfs_rules(self, pattern: str) -> CfsStatusResponse:
@@ -226,7 +236,7 @@ class BeelinePBX(object):
         _ = self._send_api_request('delete', f'abonents/{pattern}/bwl/{bwl_id}')
         return {}
 
-    def get_records(self) -> map[CallRecord]:
+    def get_records(self) -> map:
         response = self._send_api_request('get', 'records')
         return map(CallRecord.from_beeline_struct, response)
 
@@ -270,7 +280,7 @@ class BeelinePBX(object):
         )
         return response
 
-    def get_incoming_numbers(self) -> map[Number]:
+    def get_incoming_numbers(self) -> map:
         response = self._send_api_request('get', 'numbers')
         return map(Number.from_beeline_struct, response)
 
@@ -296,25 +306,25 @@ class BeelinePBX(object):
         )
         return {}
 
-    def get_icr_numbers(self) -> map[Number]:
+    def get_icr_numbers(self) -> map:
         response = self._send_api_request('get', 'icr/numbers')
         return map(Number.from_beeline_struct, response)
 
-    def enable_icr_for_number(self, numbers: list) -> map[IcrNumbersResult]:
+    def enable_icr_for_number(self, numbers: list) -> map:
         response = self._send_api_request('put', 'icr/numbers', data=numbers)
         return map(IcrNumbersResult.from_beeline_struct, response)
 
-    def stop_icr_for_number(self, numbers: list) -> map[IcrNumbersResult]:
+    def stop_icr_for_number(self, numbers: list) -> map:
         response = self._send_api_request('delete', 'icr/numbers', data=numbers)
         return map(IcrNumbersResult.from_beeline_struct, response)
 
-    def get_icr_route_rules(self) -> map[IcrRouteRule]:
+    def get_icr_route_rules(self) -> map:
         response = self._send_api_request('get', '/icr/route')
         return map(IcrRouteRule.from_beeline_struct, response)
 
     def _list_icr_rules_operation(
         self, operation: str, icr_rules: List[IcrRouteRule]
-    ) -> map[IcrRouteResult]:
+    ) -> map:
         response = self._send_api_request(
             operation,
             '/icr/route',
@@ -322,22 +332,16 @@ class BeelinePBX(object):
         )
         return map(IcrRouteResult.from_beeline_struct, response)
 
-    def delete_list_of_icr_rules(
-        self, icr_rules: List[IcrRouteRule]
-    ) -> map[IcrRouteResult]:
+    def delete_list_of_icr_rules(self, icr_rules: List[IcrRouteRule]) -> map:
         return self._list_icr_rules_operation('delete', icr_rules)
 
-    def add_list_of_icr_rules(
-        self, icr_rules: List[IcrRouteRule]
-    ) -> map[IcrRouteResult]:
+    def add_list_of_icr_rules(self, icr_rules: List[IcrRouteRule]) -> map:
         return self._list_icr_rules_operation('post', icr_rules)
 
-    def update_list_of_icr_rules(
-        self, icr_rules: List[IcrRouteRule]
-    ) -> map[IcrRouteResult]:
+    def update_list_of_icr_rules(self, icr_rules: List[IcrRouteRule]) -> map:
         return self._list_icr_rules_operation('put', icr_rules)
 
-    def get_voice_campaigns(self) -> map[VoiceCampaign]:
+    def get_voice_campaigns(self) -> map:
         response = self._send_api_request('get', 'vc')
         return map(VoiceCampaign.from_beeline_struct, response)
 
@@ -368,19 +372,31 @@ class BeelinePBX(object):
         return {}
 
     def delete_voice_campaign(self, campaign_id: str) -> dict:
-        _ = self._send_api_request('delete', f'vc/{campaign_id}',)
+        _ = self._send_api_request(
+            'delete',
+            f'vc/{campaign_id}',
+        )
         return {}
 
     def stop_voice_campaign(self, campaign_id: str) -> dict:
-        _ = self._send_api_request('put', f'vc/stop/{campaign_id}',)
+        _ = self._send_api_request(
+            'put',
+            f'vc/stop/{campaign_id}',
+        )
         return {}
 
     def start_voice_campaign(self, campaign_id: str) -> dict:
-        _ = self._send_api_request('put', f'vc/start/{campaign_id}',)
+        _ = self._send_api_request(
+            'put',
+            f'vc/start/{campaign_id}',
+        )
         return {}
 
     def get_voice_campaign_info(self, campaign_id: str) -> VoiceCampaignInfoReport:
-        response = self._send_api_request('get', f'vc/info/{campaign_id}',)
+        response = self._send_api_request(
+            'get',
+            f'vc/info/{campaign_id}',
+        )
         return VoiceCampaignInfoReport.from_beeline_struct(response)
 
     def get_statistic(
@@ -390,7 +406,7 @@ class BeelinePBX(object):
         date_to: datetime,
         page: int = 0,
         page_size: int = 100,
-    ) -> map[StatRecord]:
+    ) -> map:
         params = {
             'userId': user_id,
             'dateFrom': date_from.strftime('%Y-%m-%dT%H:%M:%SZ'),
@@ -408,7 +424,7 @@ class BeelinePBX(object):
         date_to: datetime,
         page: int = 0,
         page_size: int = 100,
-    ) -> map[StatRecordV2]:
+    ) -> map:
         params = {
             'userId': user_id,
             'dateFrom': date_from.strftime('%Y-%m-%dT%H:%M:%SZ'),

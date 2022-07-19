@@ -8,7 +8,7 @@ def read(f):
 
 setup(
     name="beeline-portal",
-    version='0.0.1',
+    version='0.0.2',
     packages=find_packages(exclude=("tests", "docs", "examples", "venv")),
     install_requires=["requests", "pytz"],
     description="Beeline cloudpbx portal api wrapper",

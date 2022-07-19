@@ -4,7 +4,6 @@ from abc import ABC
 from dataclasses import dataclass
 
 from .utils import (
-    format_datetime,
     parse_datetime_from_milliseconds,
     parse_datetime,
     format_date,
@@ -13,6 +12,7 @@ from .utils import (
 
 
 class BaseModel(ABC):
+    @classmethod
     def from_beeline_struct(cls, beeline_struct: dict) -> 'BaseModel':
         raise NotImplementedError()
 
@@ -35,7 +35,7 @@ class Abonent(BaseModel):
         return cls(
             beeline_struct['userId'],
             beeline_struct['phone'],
-            beeline_struct['firstName'],
+            beeline_struct.get('firstName', 'none'),
             beeline_struct['lastName'],
             beeline_struct.get('extension'),
             beeline_struct.get('email'),
@@ -65,7 +65,10 @@ class Number(BaseModel):
 
     @classmethod
     def from_beeline_struct(cls, beeline_struct: dict) -> 'Number':
-        return cls(beeline_struct['numberId'], beeline_struct['phone'],)
+        return cls(
+            beeline_struct['numberId'],
+            beeline_struct['phone'],
+        )
 
     def to_beeline_struct(self) -> dict:
         return {'numberId': self.number_id, 'phone': self.phone}
@@ -150,7 +153,10 @@ class Answer(BaseModel):
 
     @classmethod
     def from_beeline_struct(cls, beeline_struct: dict) -> 'Answer':
-        return cls(beeline_struct['choice'], beeline_struct['answer'],)
+        return cls(
+            beeline_struct['choice'],
+            beeline_struct['answer'],
+        )
 
     def to_beeline_struct(self) -> dict:
         return {
@@ -591,7 +597,7 @@ class CfsStatusResponse(BaseModel):
     def to_beeline_struct(self) -> dict:
         struct: dict = {'isCfsServiceEnabled': self.is_cfs_service_enabled}
         if self.rule_list:
-            struct['ruleList'] = [r.to_beeline_struct() for r in self.rule_list]
+            struct['ruleList'] = [r.to_beeline_struct() for r in self.rule_list]  # type: ignore
         return struct
 
 
@@ -623,9 +629,9 @@ class BwlStatusResponse(BaseModel):
     def to_beeline_struct(self) -> dict:
         struct: dict = {'status': self.status}
         if self.black_list:
-            struct['blackList'] = [r.to_beeline_struct() for r in self.black_list]
+            struct['blackList'] = [r.to_beeline_struct() for r in self.black_list]  # type: ignore
         if self.white_list:
-            struct['whiteList'] = [r.to_beeline_struct() for r in self.white_list]
+            struct['whiteList'] = [r.to_beeline_struct() for r in self.white_list]  # type: ignore
         return struct
 
 
@@ -689,7 +695,7 @@ class IcrNumbersResult(BaseModel):
     def to_beeline_struct(self) -> dict:
         struct: dict = {'phoneNumber': self.phone_number, 'status': self.status}
         if self.error:
-            struct['error'] = self.error
+            struct['error'] = self.error  # type: ignore
         return struct
 
 
