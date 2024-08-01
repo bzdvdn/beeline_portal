@@ -2,8 +2,9 @@ from io import open
 from setuptools import setup, find_packages
 
 
-def read(f):
-    return open(f, "r").read()
+def read(path):
+    with open(path, mode="r") as f:
+        return f.read()
 
 
 setup(
