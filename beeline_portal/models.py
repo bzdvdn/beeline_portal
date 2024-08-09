@@ -23,8 +23,8 @@ class BaseModel(ABC):
 @dataclass()
 class Abonent(BaseModel):
     user_id: str
-    first_name: str
     last_name: str
+    first_name: Optional[str] = None
     phone: Optional[str] = None
     extension: Optional[str] = None
     email: Optional[str] = None
@@ -34,8 +34,8 @@ class Abonent(BaseModel):
     def from_beeline_struct(cls, beeline_struct: dict) -> 'Abonent':
         return cls(
             beeline_struct['userId'],
-            beeline_struct.get('firstName', 'none'),
             beeline_struct['lastName'],
+            beeline_struct.get('firstName'),
             beeline_struct.get('phone'),
             beeline_struct.get('extension'),
             beeline_struct.get('email'),
@@ -45,9 +45,10 @@ class Abonent(BaseModel):
     def to_beeline_struct(self) -> dict:
         struct = {
             'userId': self.user_id,
-            'firstName': self.first_name,
             'lastName': self.last_name,
         }
+        if self.first_name:
+            struct['firstName'] = self.first_name
         if self.phone:
             struct['phone'] = self.phone
         if self.extension:
