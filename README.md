@@ -219,7 +219,7 @@ call_record = client.get_record('<record_id>') #raise BeelinePBXException or ret
 ##### get call record by extratracking id
 
 ```python
-call_record = client.get_record_by_extratracking_id('<extratracking_id>', '<user_id>') #raise BeelinePBXException or return CallRecord
+call_record = client.get_record_by_external_id('<external_id>', '<user_id>') #raise BeelinePBXException or return CallRecord
 ```
 
 ##### download call record
@@ -231,7 +231,7 @@ bytes_record_data = client.download_record('<record_id>') #raise BeelinePBXExcep
 ##### download call record by extracking id
 
 ```python
-bytes_record_data = client.download_record_by_extracking_id('<extratracking_id>', '<user_id>') #raise BeelinePBXException or return record data in bytes
+bytes_record_data = client.download_record_by_external_id('<external_id>', '<user_id>') #raise BeelinePBXException or return record data in bytes
 ```
 
 ##### get call record link
@@ -243,7 +243,7 @@ record_link = client.get_record_link('<record_id>') #raise BeelinePBXException o
 ##### get call record link by extracking id
 
 ```python
-record_link = client.get_record_link_by_extracking_id('<extratracking_id>', '<user_id>') #raise BeelinePBXException or return string
+record_link = client.get_record_link_by_external_id('<external_id>', '<user_id>') #raise BeelinePBXException or return string
 ```
 
 ##### get incoming numbers

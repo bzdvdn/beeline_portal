@@ -23,9 +23,9 @@ class BaseModel(ABC):
 @dataclass()
 class Abonent(BaseModel):
     user_id: str
-    phone: str
-    first_name: str
     last_name: str
+    first_name: Optional[str] = None
+    phone: Optional[str] = None
     extension: Optional[str] = None
     email: Optional[str] = None
     department: Optional[str] = None
@@ -34,9 +34,9 @@ class Abonent(BaseModel):
     def from_beeline_struct(cls, beeline_struct: dict) -> 'Abonent':
         return cls(
             beeline_struct['userId'],
-            beeline_struct['phone'],
-            beeline_struct.get('firstName', 'none'),
             beeline_struct['lastName'],
+            beeline_struct.get('firstName'),
+            beeline_struct.get('phone'),
             beeline_struct.get('extension'),
             beeline_struct.get('email'),
             beeline_struct.get('department'),
@@ -45,10 +45,12 @@ class Abonent(BaseModel):
     def to_beeline_struct(self) -> dict:
         struct = {
             'userId': self.user_id,
-            'phone': self.phone,
-            'firstName': self.first_name,
             'lastName': self.last_name,
         }
+        if self.first_name:
+            struct['firstName'] = self.first_name
+        if self.phone:
+            struct['phone'] = self.phone
         if self.extension:
             struct['extension'] = self.extension
         if self.email:
@@ -645,8 +647,8 @@ class CallRecord(BaseModel):
     date: datetime
     duration: int
     file_size: int
-    comment: str
     abonent: Abonent
+    comment: Optional[str] = None
 
     @classmethod
     def from_beeline_struct(cls, beeline_struct: dict) -> 'CallRecord':
@@ -656,11 +658,11 @@ class CallRecord(BaseModel):
             beeline_struct['callId'],
             beeline_struct['phone'],
             beeline_struct['direction'],
-            parse_datetime(beeline_struct['date']),
+            parse_datetime_from_milliseconds(beeline_struct['date']),
             beeline_struct['duration'],
             beeline_struct['fileSize'],
-            beeline_struct['comment'],
             Abonent.from_beeline_struct(beeline_struct['abonent']),
+            beeline_struct.get('comment'),
         )
 
     def to_beeline_struct(self) -> dict:
@@ -670,11 +672,11 @@ class CallRecord(BaseModel):
             'callId': self.call_id,
             'phone': self.phone,
             'direction': self.direction,
-            'date': format_date(self.date),
+            'date': to_milliseconds(self.date),
             'duration': self.duration,
             'fileSize': self.file_size,
-            'comment': self.comment,
             'abonent': self.abonent.to_beeline_struct(),
+            'comment': self.comment,
         }
 
 

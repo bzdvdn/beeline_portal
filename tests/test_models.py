@@ -1,7 +1,6 @@
 import unittest
 import pytz
 import json
-from unittest.case import TestCase
 from dateutil.parser import parse
 
 from beeline_portal.models import (
