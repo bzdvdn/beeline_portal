@@ -641,7 +641,6 @@ class BwlStatusResponse(BaseModel):
 class CallRecord(BaseModel):
     id_: str
     external_id: str
-    call_id: str
     phone: str
     direction: str
     date: datetime
@@ -655,7 +654,6 @@ class CallRecord(BaseModel):
         return cls(
             beeline_struct['id'],
             beeline_struct['externalId'],
-            beeline_struct['callId'],
             beeline_struct['phone'],
             beeline_struct['direction'],
             parse_datetime_from_milliseconds(beeline_struct['date']),
@@ -669,7 +667,6 @@ class CallRecord(BaseModel):
         return {
             'id': self.id_,
             'externalId': self.external_id,
-            'callId': self.call_id,
             'phone': self.phone,
             'direction': self.direction,
             'date': to_milliseconds(self.date),
