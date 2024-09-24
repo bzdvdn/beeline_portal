@@ -9,7 +9,7 @@ def read(path):
 
 setup(
     name="beeline-portal",
-    version="0.0.3",
+    version="0.0.4",
     packages=find_packages(exclude=("tests", "docs", "examples", "venv")),
     install_requires=["requests", "pytz"],
     description="Beeline cloudpbx portal api wrapper",
