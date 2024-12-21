@@ -34,7 +34,7 @@ class Abonent(BaseModel):
     def from_beeline_struct(cls, beeline_struct: dict) -> 'Abonent':
         return cls(
             beeline_struct['userId'],
-            beeline_struct['lastName'],
+            beeline_struct.get('lastName'),
             beeline_struct.get('firstName'),
             beeline_struct.get('phone'),
             beeline_struct.get('extension'),
